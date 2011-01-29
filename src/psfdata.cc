@@ -4,7 +4,6 @@ using namespace std;
 #include <fstream>
 #include <string.h>
 #include <stdint.h>
-#include <arpa/inet.h>
 #include <endian.h>
 #include <list>
 #include <map>
