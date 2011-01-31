@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@prefix@
+libdir=@exec_prefix@/lib
+includedir=@prefix@/include
+
+Name: @PACKAGE@
+Description: C++ PSF waveform reader library
+Version: @VERSION@
+Requires: 
+Conflicts: 
+Libs: -L${libdir} -lpsf
+Cflags: -I${includedir}
