@@ -32,8 +32,8 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 dnl Checks for python
-AX_PYTHON([">= '2.5'"])
-AX_PYTHON_DEVEL([">= '2.5'"])
+AX_PYTHON
+AX_PYTHON_DEVEL
 
 dnl Checks for boost 
 AX_BOOST_BASE([1.33.0])
@@ -73,6 +73,8 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 bindings/Makefile
 		 bindings/python/Makefile
+		 libpsf.pc
+		 libpsf-uninstalled.pc
 		 ])
 AC_OUTPUT
 

@@ -1,13 +1,13 @@
-pkglibdir = $(libdir)/@PYTHON_LIB@/site-packages/psf
+pkgpython_PYTHON = __init__.py
 
-pkglib_LTLIBRARIES= \
+pkgpyexec_LTLIBRARIES= \
 	_psf.la
 
 _psf_la_SOURCES = \
 	psfpython.cc
 
 _psf_la_LIBADD = \
-	../../src/libpsf.la
+	../../src/libpsf.la \
 	${PYTHON_LIB} \
 	${BOOST_PYTHON_LIB}
 
@@ -16,5 +16,6 @@ _psf_la_CXXFLAGS = \
 	-I${PYTHON_INCLUDE_DIR}
 
 _psf_la_LDFLAGS = \
-	-module Python \
+	-avoid-version -module \
 	-l${BOOST_PYTHON_LIB}
+
