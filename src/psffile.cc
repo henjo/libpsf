@@ -28,10 +28,12 @@ void PSFFile::deserialize(const char *buf, int size) {
 
     int nsections = (size - datasize - 12) / 8;
     int lastoffset = 0, lastsectionnum = -1;
+
+    const char *toc = buf + size - 12 - nsections*8;
     Section section;
     for(int i=0; i < nsections; i++) {
-	section.n = GET_INT32(buf + datasize + 8*i);
-	section.offset = GET_INT32(buf + datasize + 8*i + 4);
+	section.n = GET_INT32(toc + 8*i);
+	section.offset = GET_INT32(toc + 8*i + 4);
 
 	if (i>0)
 	    sections[lastsectionnum].size = section.offset - lastoffset;

@@ -48,6 +48,11 @@ struct PSFVector_to_numpyarray {
 	    // Create numpy array
 	    npy_intp dims[1] = { f64v->size() };
 	    return PyArray_SimpleNewFromData(1, dims, PyArray_DOUBLE, &f64v->at(0));
+	} else if (PSFComplexDoubleVector *cf64v = 
+		   dynamic_cast<PSFComplexDoubleVector *>(vec)) {
+	    // Create numpy array
+	    npy_intp dims[1] = { cf64v->size() };
+	    return PyArray_SimpleNewFromData(1, dims, PyArray_CDOUBLE, &cf64v->at(0));
 	} else if (StructVector *sv = dynamic_cast<StructVector *>(vec)) {
 	    // Create numpy array
 	    npy_intp dims[1] = { sv->size() };
