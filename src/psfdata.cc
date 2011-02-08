@@ -59,6 +59,21 @@ PSFDoubleScalar::operator double() const {
     return value;
 };
 
+// PSFDoubleScalar
+template<>
+int PSFComplexDoubleScalar::deserialize(const char *buf) {
+    *((uint64_t *)&value) = be64toh(*((uint64_t *)buf));
+    return 8;
+}
+template<>
+PSFComplexDoubleScalar::operator int() const {
+    throw NotImplemented();
+};
+template<>
+PSFComplexDoubleScalar::operator double() const {
+    throw NotImplemented();
+};
+
 // PSFStringScalar
 template<>
 int PSFStringScalar::deserialize(const char *buf) {
@@ -126,6 +141,8 @@ PSFVector *PSFVector::create(int type_id) {
     switch(type_id) {
     case TYPEID_DOUBLE:
 	return new PSFDoubleVector();
+    case TYPEID_COMPLEXDOUBLE:
+	return new PSFComplexDoubleVector();
     case TYPEID_STRUCT:
 	return new StructVector();
     default:
@@ -137,6 +154,8 @@ PSFScalar *PSFScalar::create(int type_id) {
     switch(type_id) {
     case TYPEID_DOUBLE:
 	return new PSFDoubleScalar();
+    case TYPEID_COMPLEXDOUBLE:
+	return new PSFComplexDoubleScalar();
     case TYPEID_STRUCT:
 	return new StructScalar();
     default:
@@ -152,6 +171,8 @@ int psfdata_size(int datatypeid) {
 	return 4;
     case TYPEID_DOUBLE:
 	return 8;
+    case TYPEID_COMPLEXDOUBLE:
+	return 16;
     default:
 	throw UnknownType(datatypeid);    
     }

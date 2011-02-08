@@ -66,7 +66,12 @@ int DataTypeDef::deserialize_data(void *data, const char *buf) {
 	*((PSFInt32 *)data) = GET_INT32(buf);
 	return 4;
     case TYPEID_DOUBLE:
-	*((uint64_t *)data) = be64toh(*((uint64_t *)buf));
+	GET_DOUBLE(*(PSFDouble *)data, buf);
+	return 8;
+    case TYPEID_COMPLEXDOUBLE:
+	double re, im;
+	GET_DOUBLE(re, buf); GET_DOUBLE(im, buf + sizeof(PSFDouble)); 
+	*(PSFComplexDouble *)data = PSFComplexDouble(re, im);
 	return 8;
     case TYPEID_STRUCT: 
 	{	

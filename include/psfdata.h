@@ -2,7 +2,7 @@
 #define _PSF_DATA
 
 #include <stdint.h>
-//#include <complex.h>
+#include <complex>
 #include <iostream>
 #include <map>
 #include <tr1/unordered_map>
@@ -24,13 +24,14 @@ const int TYPEID_STRING = 2;
 const int TYPEID_ARRAY = 3;
 const int TYPEID_INT32 = 5;
 const int TYPEID_DOUBLE = 11;
+const int TYPEID_COMPLEXDOUBLE = 12;
 const int TYPEID_STRUCT = 16;
 
 // Data types
 typedef int8_t PSFInt8;
 typedef int32_t PSFInt32;
 typedef double PSFDouble;
-//typedef double complex PSFComplexDouble;
+typedef std::complex<double> PSFComplexDouble;
 typedef std::string PSFString;
 
 class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
@@ -88,6 +89,7 @@ class PSFScalarT : public PSFScalar {
 };
 
 typedef PSFScalarT<PSFDouble> PSFDoubleScalar;
+typedef PSFScalarT<PSFComplexDouble> PSFComplexDoubleScalar;
 typedef PSFScalarT<PSFInt8> PSFInt8Scalar;
 typedef PSFScalarT<PSFInt32> PSFInt32Scalar;
 typedef PSFScalarT<PSFString> PSFStringScalar;
@@ -116,11 +118,6 @@ class PSFVector {
 template<class T>
 class PSFVectorT : public PSFVector, public std::vector<T> {
  public:
-    /* void append_value(PSF *x) { 	 */
-    /* 	T &v = dynamic_cast<T &>(*x); */
-    /* 	push_back(v); 	 */
-    /* } */
-    
     void extend(const PSFVector *vec) {
 	const PSFVectorT& tvec = dynamic_cast<const PSFVectorT &>(*vec);
 	reserve(std::vector<T>::size() + distance(tvec.begin(), tvec.end()));
@@ -136,6 +133,7 @@ class PSFVectorT : public PSFVector, public std::vector<T> {
 };
 
 typedef PSFVectorT<PSFDouble> PSFDoubleVector;
+typedef PSFVectorT<PSFComplexDouble> PSFComplexDoubleVector;
 typedef PSFVectorT<PSFInt8> PSFInt8Vector;
 typedef PSFVectorT<PSFInt32> PSFInt32Vector;
 typedef PSFVectorT<PSFString> PSFStringVector;

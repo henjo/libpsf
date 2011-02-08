@@ -24,9 +24,14 @@ void noisesummary() {
 
 int main() {
     std::string dcopfile("/nfs/home/henrik/spectre/1/dc.raw/dcOpInfo.info");
-    std::string tranfile("/nfs/home/henrik/pycircuit.repo/pycircuit/post/cds/test/psf/tran.tran");
+    std::string pssfdfile("../examples/data/pss0.fd.pss");
+    std::string tranfile("../examples/data/timeSweep");
 
-    noisesummary();
+    PSFDataSet psftran(tranfile);
+    PSFDataSet pssfd(pssfdfile);
+
+
+    //noisesummary();
     
     // std::cout << "Header properties:" << std::endl;
     // PropertyMap headerprops(psfnoise.get_header_properties());
@@ -37,7 +42,6 @@ int main() {
     // 	Float64Vector *parvec = (Float64Vector *)psfnoise.get_param_values();
     // }
 
-    // PSFDataSet psftran(tranfile);
 
     
     // Float64Vector *parvec = (Float64Vector *)psftran.get_param_values();

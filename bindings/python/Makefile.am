@@ -19,3 +19,5 @@ _psf_la_LDFLAGS = \
 	-avoid-version -module \
 	-l${BOOST_PYTHON_LIB}
 
+_psf_la_DEPENDENCIES =\
+	../../src/libpsf.la

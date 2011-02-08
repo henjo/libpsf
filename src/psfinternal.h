@@ -27,8 +27,9 @@
 
 #define CHUNKID_VALUESECTIONEND 15
 
-#define GET_INT32(buf) ntohl(*((uint32_t *)(buf)));
-#define READ_INT32(var, fstr) fstr.read((char *)&var, 4); var = ntohl(var);
+#define GET_INT32(buf) ntohl(*((uint32_t *)(buf)))
+#define GET_DOUBLE(dest, buf) *((uint64_t *)&(dest)) = be64toh(*((uint64_t *)buf))
+#define READ_INT32(var, fstr) fstr.read((char *)&var, 4); var = ntohl(var)
 
 typedef struct {
     uint32_t n;
