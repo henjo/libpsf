@@ -44,7 +44,7 @@ class Property;
 class PSFFile;
 class StructDef;
 class DataTypeRef;
-class PSFData;
+class PSFScalar;
 class SweepValue;
 class SweepValueSimple;
 
@@ -57,15 +57,15 @@ typedef std::tr1::unordered_map<int,int> TraceIDOffsetMap;
 typedef std::vector<int> TraceIDList;
 typedef std::vector<std::string> NameList;
 typedef std::vector<SweepValue> SweepValueList;
+typedef std::map<std::string, PSFScalar *> PropertyMap;
 
-
-class DataList : public std::vector<PSFData *> {
+class DataList : public std::vector<PSFScalar *> {
  public:
     ~DataList() { clear(); }
     void clear() {
 	for(iterator i=begin(); i != end(); i++)
 	    delete(*i);
-	std::vector<PSFData *>::clear();
+	std::vector<PSFScalar *>::clear();
     }
 };
 
@@ -91,8 +91,9 @@ public:
     virtual int32_t get_id() { return -1; };
     virtual std::string& get_name() { throw(NotImplemented()); }
 
-    virtual PSFData* get_data_object() { return NULL; };
-    virtual PSFDataVector* get_data_vector() { return NULL; };
+    virtual void * new_dataobject() { return NULL; };
+    virtual PSFScalar* new_scalar() { return NULL; };
+    virtual PSFVector* new_vector() { return NULL; };
     virtual int datasize() { return 0; };
 };
 
@@ -100,12 +101,12 @@ std::ostream &operator<<(std::ostream &stream, Chunk &o);
 
 class Property: public Chunk {	
 private:
-    String name;
-    PSFData *value;
+    PSFStringScalar name;
+    PSFScalar *value;
 public:
     virtual std::string& get_name() { return name.value; }
 
-    PSFData *get_value() { return value; }
+    PSFScalar *get_value() { return value; }
     
     static bool ischunk(int chunktype) {
 	return (chunktype >= 33) && (chunktype <= 35);
@@ -195,9 +196,9 @@ class IndexedContainer: public Container {
 class DataTypeDef: public Container {
 private:
  public:
-    UInt32 id;
-    String name;
-    UInt32 datatypeid;
+    int id;
+    PSFStringScalar name;
+    int datatypeid;
     PropertyList properties;
     StructDef *structdef;
     int _datasize;
@@ -206,8 +207,9 @@ private:
 
     DataTypeDef() { chunktype = type; }
 
-    PSFData* get_data_object();
-    PSFDataVector *get_data_vector();
+    void *new_dataobject();
+    PSFScalar *new_scalar();
+    PSFVector *new_vector();
 
     virtual std::string& get_name() { return name.value; }
 
@@ -220,6 +222,8 @@ private:
 
     virtual int deserialize(const char *buf);
     
+    int deserialize_data(void *data, const char *buf);
+
     int datasize() const { return _datasize; }
 
     virtual int32_t get_id() { return id; };
@@ -232,9 +236,9 @@ private:
 
 class GroupDef: public Container {
 private:
-    UInt32 id;
-    String name;
-    UInt32 nchildren;
+    int id;
+    PSFStringScalar name;
+    int nchildren;
 
     PSFFile *psf;
 
@@ -252,8 +256,8 @@ public:
 
     std::string& get_name() { return name.value; }
 
-    PSFData *get_data_object();
-    PSFData *get_data_object(std::vector<int> *filter);
+    void *new_dataobject();
+    Group *new_group(std::vector<int> *filter);
 
     static bool ischunk(int chunktype) {
 	return chunktype == GroupDef::type;
@@ -264,9 +268,9 @@ public:
 
 class DataTypeRef: public Container {
 private:
-    UInt32 id;
-    String name;
-    UInt32 datatypeid;
+    int id;
+    PSFStringScalar name;
+    int datatypeid;
     PropertyList properties;
     StructDef *structdef;
     PSFFile *psf;
@@ -287,12 +291,18 @@ public:
 
     virtual std::string& get_name() { return name.value; }
 
+    DataTypeDef& get_def();
+
     virtual int deserialize(const char *buf);
 
     DataTypeDef& get_datatype();
 
-    PSFData *get_data_object();
-    PSFDataVector *get_data_vector();
+    void *new_dataobject();
+    PSFVector *new_vector();
+
+    int deserialize_data(void *data, const char *buf) { 
+	return get_def().deserialize_data(data, buf); 
+    }
 
     int datasize();
 
@@ -321,7 +331,7 @@ public:
 
 class HeaderSection: public SimpleContainer {	
 private:
-    std::map<std::string, PSFData *> properties;
+    PropertyMap properties;
 public:
     static const int type = 21;
     HeaderSection() {
@@ -332,10 +342,9 @@ public:
     
     virtual int deserialize(const char *buf, int abspos);
 
-    PSFData *get_property(std::string key) {
-	return properties.find(key)->second;
-    }
+    const PropertyMap& get_header_properties() { return properties; }
 
+    PSFScalar *get_property(std::string key);
 };
 
 class TypeSection: public IndexedContainer {
@@ -363,6 +372,7 @@ public:
     virtual Chunk *child_factory(int chunktype);
 
     NameList get_names();
+
     DataTypeRef& get_trace_by_name(std::string name);
 
     TraceSection(PSFFile *_psf) {
@@ -409,11 +419,11 @@ class SweepSection: public SimpleContainer {
 
 class NonSweepValue : public Chunk {
  private:
-    UInt32 id;
-    String name;
-    UInt32 valuetypeid;
+    int id;
+    PSFStringScalar name;
+    int valuetypeid;
     DataTypeDef *valuetype;	
-    PSFData *value;
+    PSFScalar *value;
     PropertyList properties;
     PSFFile *psf;
  public:
@@ -423,7 +433,7 @@ class NonSweepValue : public Chunk {
 
     std::string& get_name() { return name.value; }
 
-    PSFData* get_value() { return value; }
+    PSFScalar* get_value() { return value; }
 
     virtual int deserialize(const char *buf);
 
@@ -432,22 +442,21 @@ class NonSweepValue : public Chunk {
     }
 };
 
-class SweepValue: public Chunk, public std::vector<PSFDataVector *> {
+class SweepValue: public Chunk, public std::vector<PSFVector *> {
  protected:
-    UInt32 id;
-    String name;
-    UInt32 linktypeid;
-    DataTypeRef paramtype;	
-    PSFDataVector *paramvalues;
+    int id;
+    PSFStringScalar name;
+    int linktypeid;
+    PSFVector *paramvalues;
 
 public:
     static const int type = 16;
 
-    SweepValue() : paramvalues(NULL), paramtype(NULL) { chunktype = type; }
+    SweepValue() : paramvalues(NULL) { chunktype = type; }
 
     std::string& get_name() { return name.value; }
 
-    PSFDataVector *get_param_values() const { return paramvalues; }
+    PSFVector *get_param_values() const { return paramvalues; }
     virtual int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter) {};
 };
 
@@ -498,7 +507,7 @@ class ValueSectionNonSweep: public IndexedContainer {
     
     ValueSectionNonSweep(PSFFile *_psf) : psf(_psf) {};
 
-    PSFData* get_value(std::string name);
+    PSFScalar* get_value(std::string name);
    
     virtual Chunk *child_factory(int chunktype);
 
@@ -529,8 +538,8 @@ public:
     SweepValue *new_value();
 
     SweepValue *get_values(ChildList &filter);
-    PSFDataVector* get_values(std::string name);
-    PSFDataVector* get_param_values();
+    PSFVector* get_values(std::string name);
+    PSFVector* get_param_values();
 
     int valueoffset(int id);
     int valuesize() { return _valuesize; };
@@ -557,9 +566,9 @@ public:
 
     PSFFile(std::string _filename);
 
-    PSFDataVector *get_param_values();
-    PSFDataVector *get_values(std::string name);
-    PSFData* get_value(std::string name);
+    PSFVector *get_param_values();
+    PSFVector *get_values(std::string name);
+    PSFScalar* get_value(std::string name);
     
     NameList get_names();
     

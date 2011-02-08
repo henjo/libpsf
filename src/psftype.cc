@@ -6,21 +6,21 @@
 // DataTypeDef
 //
 
-
 int DataTypeDef::deserialize(const char *buf) {
     const char *startbuf = buf;
 
     buf += Chunk::deserialize(buf);
-	
-    buf += id.deserialize(buf);
+
+    id = GET_INT32(buf); buf+=4;
+
     buf += name.deserialize(buf);
 	
-    UInt32 arraytype;
-    buf += arraytype.deserialize(buf);
+    int arraytype = GET_INT32(buf); buf+=4;
 
-    buf += datatypeid.deserialize(buf);
+    datatypeid = GET_INT32(buf);
+    buf += 4;
 
-    if(datatypeid.value == 16) {
+    if(datatypeid == 16) {
 	structdef = new StructDef();
 	buf += structdef->deserialize(buf);
 	_datasize = structdef->datasize();
@@ -42,32 +42,68 @@ int DataTypeDef::deserialize(const char *buf) {
     return buf - startbuf;
 };
 
-
-PSFData *DataTypeDef::get_data_object() {
-    if(datatypeid == 16) 
-	return structdef->get_data_object();
-    else
-	return psfdata_from_typeid(datatypeid);
+void * DataTypeDef::new_dataobject() {
+    switch(datatypeid) {
+    case TYPEID_INT8:
+	return new PSFInt8;
+    case TYPEID_INT32:
+	return new PSFInt32;
+    case TYPEID_DOUBLE:
+	return new PSFDouble;
+    case TYPEID_STRUCT:
+	return structdef->new_dataobject();
+    default:
+	throw UnknownType(datatypeid);    
+    }
 }
 
-PSFDataVector *DataTypeDef::get_data_vector() {
-    return PSFDataVector::create(datatypeid);
+int DataTypeDef::deserialize_data(void *data, const char *buf) {
+    switch(datatypeid) {
+    case TYPEID_INT8:
+	*((PSFInt8 *)data) = *((int8_t *)buf+3);
+	return 4;
+    case TYPEID_INT32:
+	*((PSFInt32 *)data) = GET_INT32(buf);
+	return 4;
+    case TYPEID_DOUBLE:
+	*((uint64_t *)data) = be64toh(*((uint64_t *)buf));
+	return 8;
+    case TYPEID_STRUCT: 
+	{	
+	    Struct *s = (Struct *)data;
+	    *s = Struct(structdef);
+	    return s->deserialize(buf);
+	}
+    default:
+	throw UnknownType(datatypeid);    
+    }
+}
+
+PSFScalar *DataTypeDef::new_scalar() {
+    return PSFScalar::create(datatypeid);
+}
+
+PSFVector *DataTypeDef::new_vector() {
+    return PSFVector::create(datatypeid);
 }
 
 //
 // DataTypeRef
 //
 
+DataTypeDef& DataTypeRef::get_def() { 	
+    return dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid)); 
+}	
 
 int DataTypeRef::deserialize(const char *buf) {	
     const char *startbuf = buf;
 
     buf += Chunk::deserialize(buf);
 	
-    buf += id.deserialize(buf);
+    id = GET_INT32(buf); buf+=4;
     buf += name.deserialize(buf);
 
-    buf += datatypeid.deserialize(buf);
+    datatypeid = GET_INT32(buf); buf+=4;
 
     // Read optional properties
     while(true) {  	
@@ -82,17 +118,16 @@ int DataTypeRef::deserialize(const char *buf) {
     }
 
     return buf - startbuf;
-	
-}
- 
-PSFData * DataTypeRef::get_data_object() {
-    DataTypeDef &def = dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid));
-    return def.get_data_object();
 }
 
-PSFDataVector * DataTypeRef::get_data_vector() {
+void * DataTypeRef::new_dataobject() {
     DataTypeDef &def = dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid));
-    return def.get_data_vector();
+    return def.new_dataobject();
+}
+
+PSFVector * DataTypeRef::new_vector() {
+    DataTypeDef &def = dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid));
+    return def.new_vector();
 }
 
 DataTypeDef& DataTypeRef::get_datatype() { 

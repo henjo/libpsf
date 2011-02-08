@@ -111,16 +111,16 @@ bool PSFFile::validate() {
     return !strcmp(clarissa, "Clarissa");
 }	
 
-PSFDataVector * PSFFile::get_param_values() {
+PSFVector * PSFFile::get_param_values() {
     return sweepvalues->get_param_values();
 }
 
-PSFDataVector * PSFFile::get_values(std::string name) {
+PSFVector * PSFFile::get_values(std::string name) {
     if(sweepvalues)
 	return sweepvalues->get_values(name);
 }	
 
-PSFData * PSFFile::get_value(std::string name) {
+PSFScalar * PSFFile::get_value(std::string name) {
     if(nonsweepvalues)
 	return nonsweepvalues->get_value(name);
 }

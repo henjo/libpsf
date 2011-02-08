@@ -6,6 +6,7 @@
 #include <exception>
 #include <vector>
 #include <string>
+#include <map>
 
 // Prototypes
 class PSFFile;
@@ -34,6 +35,8 @@ class FileOpenError: public std::exception {};
 
 #include "psfdata.h"
 
+typedef std::map<std::string, PSFScalar *> PropertyMap;
+
 class PSFDataSet {
  private:
     PSFFile *psf;
@@ -42,10 +45,12 @@ class PSFDataSet {
     PSFDataSet(std::string filename);
     ~PSFDataSet();
 
+    const PropertyMap get_header_properties();
+
     std::vector<std::string> get_signal_names();
-    PSFDataVector *get_param_values();
-    PSFDataVector *get_signal_values(std::string name);
-    PSFData *get_signal_value(std::string name);
+    PSFVector *get_param_values();
+    PSFVector *get_signal_values(std::string name);
+    PSFScalar *get_signal_value(std::string name);
 };
 
 #endif

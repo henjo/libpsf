@@ -14,7 +14,7 @@ Chunk * ValueSectionNonSweep::child_factory(int chunktype) {
     }
 }
 
-PSFData* ValueSectionNonSweep::get_value(std::string name) {
+PSFScalar* ValueSectionNonSweep::get_value(std::string name) {
     return dynamic_cast<NonSweepValue &>(get_child(name)).get_value();
 }
 
@@ -22,12 +22,12 @@ int NonSweepValue::deserialize(const char *buf) {
     const char *startbuf = buf;
 
     buf += Chunk::deserialize(buf);
-    
-    buf += id.deserialize(buf);
+   
+    id = GET_INT32(buf); buf+=4;
     buf += name.deserialize(buf);	
-    buf += valuetypeid.deserialize(buf);
+    valuetypeid = GET_INT32(buf); buf+=4;
     
-    value = psf->types->get_typedef(valuetypeid.value).get_data_object();
+    value = psf->types->get_typedef(valuetypeid).new_scalar();
 
     buf += value->deserialize(buf);
     

@@ -34,6 +34,6 @@ DataTypeRef & TraceSection::get_trace_by_name(const std::string name) {
 	if(groupdef) {
 	    return dynamic_cast<DataTypeRef &>(groupdef->get_child(name));
 	} else
-	    return dynamic_cast<DataTypeRef &>(Container::get_child(name));
+	    return dynamic_cast<DataTypeRef &>(get_child(name));
     }
 }

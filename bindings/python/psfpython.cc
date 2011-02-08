@@ -15,40 +15,39 @@
 
 using namespace boost::python;
 
-struct PSFData_to_python {
-    static PyObject *convert(PSFData *value) {
-	if (Float64 *p = dynamic_cast<Float64 *>(value)) {
+struct Struct_to_python {
+    static PyObject *convert(const Struct& s);
+};
+
+struct PSFScalar_to_python {
+    static PyObject *convert(PSFScalar *scalar) {
+	if (PSFDoubleScalar *p = dynamic_cast<PSFDoubleScalar *>(scalar)) {
 	    return PyFloat_FromDouble(p->value);
-	} else if(Struct *p = dynamic_cast<Struct *>(value)) {
-	    PyObject *dict = PyDict_New();
-
-	    for(Struct::iterator i = p->begin(); i != p->end(); i++)
-		PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
-			       convert(i->second));
-
-	    return dict;
+	} else if(StructScalar *p = dynamic_cast<StructScalar *>(scalar)) {
+	    return Struct_to_python::convert(p->value);
 	} else {
 	    return NULL;
 	}
-    } 
+    }
 };
 
-struct PSFDataVector_to_numpyarray {	
-    static PyObject *convert(PSFDataVector *vec) {
-	if (Float64Vector *f64v = dynamic_cast<Float64Vector *>(vec)) {
+PyObject *Struct_to_python::convert(const Struct& s) {
+    PyObject *dict = PyDict_New();
+    
+    for(Struct::const_iterator i = s.begin(); i != s.end(); i++) 
+	PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+		       PSFScalar_to_python::convert(i->second));	
+    
+    return dict;
+}
+
+
+struct PSFVector_to_numpyarray {	
+    static PyObject *convert(PSFVector *vec) {
+	if (PSFDoubleVector *f64v = dynamic_cast<PSFDoubleVector *>(vec)) {
 	    // Create numpy array
 	    npy_intp dims[1] = { f64v->size() };
-	    PyObject *a = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
-
-	    // Copy data to it
-	    double *ptr = (double *) PyArray_DATA(a);	
-	    for(unsigned int i=0; i < f64v->size(); i++)
-		ptr[i] = (*f64v)[i].value;
-
-	    // Delete source vector
-	    delete(vec);
-
-	    return a;
+	    return PyArray_SimpleNewFromData(1, dims, PyArray_DOUBLE, &f64v->at(0));
 	} else if (StructVector *sv = dynamic_cast<StructVector *>(vec)) {
 	    // Create numpy array
 	    npy_intp dims[1] = { sv->size() };
@@ -56,7 +55,7 @@ struct PSFDataVector_to_numpyarray {
 
 	    PyObject **ptr = (PyObject **) PyArray_DATA(a);	
 	    for(unsigned int i=0; i < sv->size(); i++)
-		ptr[i] = PSFData_to_python::convert(&(*sv)[i]);
+		ptr[i] = Struct_to_python::convert(sv->at(i));
 
 	    // Delete source vector
 	    delete(vec);
@@ -69,10 +68,11 @@ struct PSFDataVector_to_numpyarray {
 BOOST_PYTHON_MODULE(_psf)
 { 
     import_array();
-    to_python_converter<PSFDataVector *, PSFDataVector_to_numpyarray>();
-    to_python_converter<PSFData *, PSFData_to_python>();
+    to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
+    to_python_converter<PSFScalar *, PSFScalar_to_python>();
+    to_python_converter<Struct, Struct_to_python>();
 
-    class_<PSFDataVector>("PSFDataVector");
+    //    class_<PSFVector>("PSFVector");
 
     class_< std::vector<std::string> >("StringVec")
 	.def(vector_indexing_suite<std::vector<std::string> >())

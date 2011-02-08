@@ -13,6 +13,24 @@ Chunk *HeaderSection::child_factory(int chunktype) {
     }
 }
 
+int HeaderSection::deserialize(const char *buf, int abspos) {
+    int n = SimpleContainer::deserialize(buf, abspos);
+
+    for(Container::const_iterator child=begin(); child !=end(); child++) {
+	Property *prop = (Property *)*child;
+	properties[prop->get_name()] = prop->get_value();
+    }
+
+    return n;
+}
+
+PSFScalar *HeaderSection::get_property(std::string key) {
+    if(properties.find(key) == properties.end())
+	return NULL;
+    else
+	return properties.find(key)->second;
+}
+
 Chunk *TypeSection::child_factory(int chunktype) {
     if(DataTypeDef::ischunk(chunktype))
 	return new DataTypeDef();

@@ -15,15 +15,15 @@ int Property::deserialize(const char *buf) {
 
     switch(chunktype) {
     case 33:
-	value = new String;
+	value = new PSFStringScalar;
 	buf += value->deserialize(buf);
 	break;
     case 34:
-	value = new Int32();
+	value = new PSFInt32Scalar();
 	buf += value->deserialize(buf);
 	break;
     case 35:
-	value = new Float64();
+	value = new PSFDoubleScalar();
 	buf += value->deserialize(buf);
 	break;
     }

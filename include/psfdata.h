@@ -2,6 +2,7 @@
 #define _PSF_DATA
 
 #include <stdint.h>
+//#include <complex.h>
 #include <iostream>
 #include <map>
 #include <tr1/unordered_map>
@@ -12,114 +13,30 @@
 //
 class StructDef;
 class GroupDef;
-class PSFDataVector;
+class PSFScalar;
+class PSFVector;
 
-class PSFData {
-public:	
-    virtual int deserialize(const char *buf) { return 0; };
-    virtual void print(std::ostream &stream)=0;
-    
-    virtual operator int() const { return -1; }
-    
-    virtual int datasize() const { throw NotImplemented(); }
+//
+// Type identifiers
+//
+const int TYPEID_INT8 = 1;
+const int TYPEID_STRING = 2;
+const int TYPEID_ARRAY = 3;
+const int TYPEID_INT32 = 5;
+const int TYPEID_DOUBLE = 11;
+const int TYPEID_STRUCT = 16;
 
-    friend std::ostream &operator<<(std::ostream &stream, PSFData &o);
-};
+// Data types
+typedef int8_t PSFInt8;
+typedef int32_t PSFInt32;
+typedef double PSFDouble;
+//typedef double complex PSFComplexDouble;
+typedef std::string PSFString;
 
-class String: public PSFData {
-public:
-    static const int type_id = 2;
-
-    std::string value;
-    String() {};
-
-    void print(std::ostream &stream) {
-	stream << value;
-    };
-
-    operator int() const { return atoi(value.c_str()); }
-
-    int deserialize(const char *buf);
-};
-
-
-class Int8: public PSFData {
- private:
-     int8_t value;
-public:
-    static const int type_id = 1;
-
-    void print(std::ostream &stream) {
- 	stream << value;
-    };
-
-     int datasize() const { return 4; }
-
-     operator int() const { return value; }
-
-     int deserialize(const char *buf);
-};
-
-class Int32: public PSFData {
- private:
-     int32_t value;
-public:
-    static const int type_id = 5;
-
-    void print(std::ostream &stream) {
- 	stream << value;
-    };
-
-     int datasize() const { return 4; }
-
-     operator int() const { return value; }
-
-     int deserialize(const char *buf);
-};
-
-class UInt32: public PSFData {
-private:
-public:
-    uint32_t value;
-    UInt32() {};
-
-    void print(std::ostream &stream) {
-	stream << value;
-    };
-
-    int datasize() const { return 4; }
-
-    operator int() const { return value; }
-
-    int deserialize(const char *buf);
-};
-
-class Float64: public PSFData {
-private:
-public:
-    double value;
-    static const int type_id = 11;
-
-    Float64() : value(0) {};
-    Float64(double _value) : value(_value) {};
-
-    void print(std::ostream &stream) {
-	stream << value;
-    };
-
-    int datasize() const { return 8; }
-
-    operator int() const { return int(value); }
-
-    int deserialize(const char *buf);
-};
-
-class Struct: public PSFData, public std::tr1::unordered_map<std::string, PSFData *> {
+class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
  private:
     StructDef *structdef;
  public:
-    static const int type_id = 16;
-
     Struct() : structdef(NULL) {}
     Struct(StructDef *_structdef) { structdef = _structdef; }
 
@@ -127,21 +44,10 @@ class Struct: public PSFData, public std::tr1::unordered_map<std::string, PSFDat
 
     int deserialize(const char *buf);
 
-    void print(std::ostream &stream);
+    friend std::ostream &operator<<(std::ostream &stream, Struct &o);
 };
 
-class PSFDataVector {
- public:
-    int type_id;
-    
-    virtual void append_value(PSFData *) {};
-    
-    virtual void extend(const PSFDataVector *) {};
-
-    static PSFDataVector *create(int type_id);
-};
-
-class Group: public PSFData, public std::vector<PSFDataVector *> {
+class Group: public std::vector<PSFVector *> {
  private:
     GroupDef *groupdef;
     std::vector<int> *filter;
@@ -154,25 +60,87 @@ class Group: public PSFData, public std::vector<PSFDataVector *> {
     int deserialize(const char *buf, int n, int windowsize);
 };
 
-template<class T>
-class PSFDataVectorT : public PSFDataVector, public std::vector<T> {
+//
+// Scalar data
+//
+class PSFScalar {
+ private:
+    virtual void print(std::ostream &stream)=0;
  public:
-    void append_value(PSFData *x) { 	
-	T &v = dynamic_cast<T &>(*x);
-	push_back(v); 	
-    }
+    virtual int deserialize(const char *buf) { return 0; };
+
+    virtual operator int() const { return -1; }
+    virtual operator double() const { return 0.0; }
+    friend std::ostream &operator<<(std::ostream &stream, PSFScalar &o);
+    static PSFScalar *create(int type_id);
+};
+
+template<class T> 
+class PSFScalarT : public PSFScalar {
+ private:
+    virtual void print(std::ostream &stream) { stream << value; }
+ public:
+    T value;
+
+    operator double() const;
+    operator int() const;
+    int deserialize(const char *buf);
+};
+
+typedef PSFScalarT<PSFDouble> PSFDoubleScalar;
+typedef PSFScalarT<PSFInt8> PSFInt8Scalar;
+typedef PSFScalarT<PSFInt32> PSFInt32Scalar;
+typedef PSFScalarT<PSFString> PSFStringScalar;
+typedef PSFScalarT<Struct> StructScalar;
+
+//
+// Vector data
+//
+class PSFVector {
+ public:
+    int type_id;
+
+    virtual std::size_t size()=0;
     
-    void extend(const PSFDataVector *vec) {
-	const PSFDataVectorT& tvec = dynamic_cast<const PSFDataVectorT &>(*vec);
+    virtual void resize(std::size_t n)=0;
+    
+    virtual void append_value(void *) {};
+    
+    virtual void extend(const PSFVector *) {};
+
+    static PSFVector *create(int type_id);
+
+    virtual void *ptr_at(int i)=0;
+};
+
+template<class T>
+class PSFVectorT : public PSFVector, public std::vector<T> {
+ public:
+    /* void append_value(PSF *x) { 	 */
+    /* 	T &v = dynamic_cast<T &>(*x); */
+    /* 	push_back(v); 	 */
+    /* } */
+    
+    void extend(const PSFVector *vec) {
+	const PSFVectorT& tvec = dynamic_cast<const PSFVectorT &>(*vec);
 	reserve(std::vector<T>::size() + distance(tvec.begin(), tvec.end()));
 	insert(std::vector<T>::end(), tvec.begin(), tvec.end());
     }
+    
+    void *ptr_at(int i) { return &std::vector<T>::at(i); }
+
+    std::size_t size() { return std::vector<T>::size(); };
+    void resize(std::size_t n) { std::vector<T>::resize(n); };
+    
+    
 };
 
-typedef PSFDataVectorT<Float64> Float64Vector;
-typedef PSFDataVectorT<Struct> StructVector;
+typedef PSFVectorT<PSFDouble> PSFDoubleVector;
+typedef PSFVectorT<PSFInt8> PSFInt8Vector;
+typedef PSFVectorT<PSFInt32> PSFInt32Vector;
+typedef PSFVectorT<PSFString> PSFStringVector;
+typedef PSFVectorT<Struct> StructVector;
 
-PSFData *psfdata_from_typeid(int type_id);
 int psfdata_size(int type_id);
 
 #endif

@@ -16,14 +16,18 @@ std::vector<std::string> PSFDataSet::get_signal_names() {
     return psf->get_names();
 }
 
-PSFDataVector *PSFDataSet::get_param_values() {	
+PSFVector *PSFDataSet::get_param_values() {	
     return psf->get_param_values();
 }
 
-PSFDataVector *PSFDataSet::get_signal_values(std::string name) {	
+PSFVector *PSFDataSet::get_signal_values(std::string name) {	
     return psf->get_values(name);
 }
 
-PSFData *PSFDataSet::get_signal_value(std::string name) {	
+PSFScalar *PSFDataSet::get_signal_value(std::string name) {	
     return psf->get_value(name);
+}
+
+const std::map<std::string, PSFScalar *> PSFDataSet::get_header_properties() {
+    return psf->header->get_header_properties();
 }

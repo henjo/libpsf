@@ -23,17 +23,6 @@ SweepValue * ValueSectionSweep::new_value() {
 	return new SweepValueSimple();
 }
 
-int HeaderSection::deserialize(const char *buf, int abspos) {
-    int n = SimpleContainer::deserialize(buf, abspos);
-
-    for(Container::const_iterator child=begin(); child !=end(); child++) {
-	Property *prop = (Property *)*child;
-	properties[prop->get_name()] = prop->get_value();
-    }
-
-    return n;
-}
-
 int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffset, PSFFile *psf, 
 				    ChildList &filter) {
     const char *startbuf = buf;
@@ -53,7 +42,7 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 
 	resize(size() + groupdef->size());
     
-	Group *group = dynamic_cast<Group *>(groupdef->get_data_object(&filter2));
+	Group *group = groupdef->new_group(&filter2);
 
 	groups.push_back(group);
 
@@ -61,6 +50,13 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	    (*this)[k++] = *ivec;
 	}
     }
+
+    // De-serialize all datapoints to data vectors that are stored in the single group
+    
+    DataTypeRef &paramtype = *((DataTypeRef *)(*psf->sweeps)[0]);
+
+    if(paramvalues == NULL)
+	paramvalues = paramtype.new_vector();
 
     for(int i=0; i < *totaln; ) {
 	buf += Chunk::deserialize(buf);
@@ -72,17 +68,10 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	buf += 4;
 	windowoffset += 4;
     
-	paramtype = *((DataTypeRef *)(*psf->sweeps)[0]);
-
-	if(paramvalues == NULL)
-	    paramvalues = paramtype.get_data_vector();
-
-	PSFData *paramvalue = paramtype.get_data_object();
-
-	for(int j=0; j < n; j++) {
-	    buf += paramvalue->deserialize(buf);
-	    paramvalues->append_value(paramvalue);
-	}
+	int pwinstart = paramvalues->size();
+	paramvalues->resize(paramvalues->size() + n);
+	for(int j=0; j < n; j++)
+	    buf += paramtype.deserialize_data(paramvalues->ptr_at(pwinstart + j), buf);
 
 	const char *valuebuf = buf;
 
@@ -99,6 +88,24 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter) {
     const char *startbuf = buf;
 
+    
+
+    // Create data vectors
+    for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++) {
+	DataTypeRef *trace = (DataTypeRef *) *j;
+	PSFVector *vec = trace->new_vector();
+	vec->resize(*n);
+	push_back(vec);
+    }
+
+    DataTypeRef &paramtype = *((DataTypeRef *)(*psf->sweeps)[0]);
+
+    if(paramvalues == NULL)
+	paramvalues = paramtype.new_vector();
+
+    int paramstartidx = paramvalues->size();
+    paramvalues->resize(paramvalues->size() + *n);
+
     for(int i=0; i < *n; i++) {
 	const char *pointstartbuf = buf;
 
@@ -107,20 +114,14 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	int paramtypeid = GET_INT32(buf);
 	buf += 4;
     
-	paramtype = psf->sweeps->get_sweep(paramtypeid);
+	assert(paramtypeid == paramtype.get_id());
 
-	if(paramvalues == NULL)
-	    paramvalues = paramtype.get_data_vector();
-
-	PSFData *paramvalue = paramtype.get_data_object();
-	buf += paramvalue->deserialize(buf);
-
-	paramvalues->append_value(paramvalue);
+	buf += paramtype.deserialize_data(paramvalues->ptr_at(paramstartidx + i), buf);
 
 	const char *valuebuf = buf;
 
-	clear();
-	for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++) {
+	int k=0;
+	for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++, k++) {
 	    DataTypeRef *trace = (DataTypeRef *) *j;
 
 	    buf = valuebuf + psf->sweepvalues->valueoffset(trace->get_id());
@@ -134,9 +135,7 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	
 	    assert(trace->get_id() == traceid);
 
-	    PSFData *value = trace->get_data_object();
-	    value->deserialize(buf);
-	    //	    push_back(value);
+	    buf += trace->deserialize_data(this->at(k)->ptr_at(i), buf);
 	}
 	buf = pointstartbuf + (valuebuf-pointstartbuf) + 8 * psf->traces->size() + psf->sweepvalues->valuesize();
     }
@@ -184,7 +183,7 @@ SweepValue* ValueSectionSweep::get_values(ChildList &filter) {
     return value;
 }
 
-PSFDataVector* ValueSectionSweep::get_values(std::string name) {
+PSFVector* ValueSectionSweep::get_values(std::string name) {
     // Create filter for retrieving the trace with correct name
     ChildList filter;
     Chunk &trace = psf->traces->get_trace_by_name(name);
@@ -196,7 +195,7 @@ PSFDataVector* ValueSectionSweep::get_values(std::string name) {
 }
 
 
-PSFDataVector* ValueSectionSweep::get_param_values() {
+PSFVector* ValueSectionSweep::get_param_values() {
     ChildList filter;
     SweepValue *v = get_values(filter);
     return v->get_param_values();

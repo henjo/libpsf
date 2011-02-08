@@ -67,7 +67,7 @@ dnl Checks for library functions.
 AC_FUNC_MMAP
 
 dnl Include libtool to build shared libraries
-LT_INIT
+dnl LT_INIT
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
