@@ -35,6 +35,7 @@ dnl Checks for python
 AX_PYTHON
 AX_PYTHON_DEVEL
 
+
 dnl Checks for boost 
 AX_BOOST_BASE([1.33.0])
 
@@ -62,6 +63,9 @@ AC_CHECK_HEADER([${NUMPY_DIR}/arrayobject.h],
                 [#include "Python.h"])
 AC_SUBST(NUMPY_HEADER)
 CPPFLAGS_SAVE=$CPPFLAGS
+
+#AM_CONDITIONAL(WITH_PYTHON, test ! -z "$BOOST_PYTHON_LIB" )
+AM_CONDITIONAL(WITH_PYTHONBINDINGS, test ! -z "$BOOST_PYTHON_LIB" -a "x$NUMPY_HEADER" == "xyes" )
 
 dnl Checks for library functions.
 AC_FUNC_MMAP
