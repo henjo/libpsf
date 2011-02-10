@@ -4,6 +4,92 @@
 
 #include <assert.h>
 
+ValueSectionSweep::ValueSectionSweep(PSFFile *_psf) : psf(_psf) {
+    chunktype = ValueSectionSweep::type;
+
+    windowedsweep = (psf->header->get_property("PSF window size") != NULL);
+
+    valuebuf = endbuf = NULL;
+}
+
+void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {    
+    _valuesize = 0;
+    int valueoffset = 0;
+
+    for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
+	if(DataTypeRef *ref = dynamic_cast<DataTypeRef *>(*trace)) {
+	    int child_datasize = ref->get_datatype().datasize();
+
+	    _valuesize += child_datasize;
+
+	    valueoffsetmap[(*trace)->get_id()] = valueoffset;
+	    valueoffset += 8 + child_datasize;
+	}
+    }
+}
+
+SweepValue* ValueSectionSweep::get_values(ChildList &filter) {
+    const char *buf = valuebuf;
+
+    SweepValue *value = new_value();
+    
+    int n = *psf->header->get_property("PSF sweep points");
+    
+    int windowoffset = 0;
+    value->deserialize(buf, &n, windowoffset, psf, filter);
+
+    return value;
+}
+
+PSFVector* ValueSectionSweep::get_values(std::string name) {
+    // Create filter for retrieving the trace with correct name
+    ChildList filter;
+    Chunk &trace = psf->traces->get_trace_by_name(name);
+    filter.push_back(&trace);
+    
+    SweepValue *v = get_values(filter);
+    
+    PSFVector *result = v->at(0);
+    
+    // Clear vector to avoid deallocation of result
+    v->clear();
+
+    delete v;
+
+    return result;
+}
+
+
+PSFVector* ValueSectionSweep::get_param_values() {
+    ChildList filter;
+    SweepValue *v = get_values(filter);
+    return v->get_param_values();
+}
+
+
+int ValueSectionSweep::deserialize(const char *buf, int abspos) {
+    const char *startbuf = buf;
+
+    buf += Chunk::deserialize(buf);
+	
+    uint32_t endpos = GET_INT32(buf);
+    buf += sizeof(uint32_t);
+
+    if (windowedsweep) {
+	ZeroPad pad;
+	buf += pad.deserialize(buf);
+    }  
+        
+    _create_valueoffsetmap(windowedsweep);
+
+    valuebuf = buf;
+
+    endbuf = startbuf + endpos - abspos;
+
+    return endpos-abspos;
+};
+
+
 int ValueSectionSweep::valueoffset(int id) {
     return valueoffsetmap[id];
 }
@@ -21,6 +107,17 @@ SweepValue * ValueSectionSweep::new_value() {
 	return new SweepValueWindowed();
     else
 	return new SweepValueSimple();
+}
+
+
+
+
+SweepValue::~SweepValue() {
+    if (paramvalues)
+	delete(paramvalues);
+
+    for(std::vector<PSFVector *>::const_iterator i = begin(); i != end(); i++)
+	delete(*i);
 }
 
 int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffset, PSFFile *psf, 
@@ -88,8 +185,6 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter) {
     const char *startbuf = buf;
 
-    
-
     // Create data vectors
     for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++) {
 	DataTypeRef *trace = (DataTypeRef *) *j;
@@ -104,7 +199,8 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	paramvalues = paramtype.new_vector();
 
     int paramstartidx = paramvalues->size();
-    paramvalues->resize(paramvalues->size() + *n);
+
+    paramvalues->resize(paramstartidx + *n);
 
     for(int i=0; i < *n; i++) {
 	const char *pointstartbuf = buf;
@@ -143,86 +239,6 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
     return buf - startbuf;
 }
 
-
-ValueSectionSweep::ValueSectionSweep(PSFFile *_psf) : psf(_psf) {
-    chunktype = ValueSectionSweep::type;
-
-    windowedsweep = (psf->header->get_property("PSF window size") != NULL);
-
-    valuebuf = endbuf = NULL;
-}
-
-void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {    
-    _valuesize = 0;
-    int valueoffset = 0;
-
-    for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
-	if(DataTypeRef *ref = dynamic_cast<DataTypeRef *>(*trace)) {
-	    int child_datasize = ref->get_datatype().datasize();
-
-	    _valuesize += child_datasize;
-
-	    valueoffsetmap[(*trace)->get_id()] = valueoffset;
-	    valueoffset += 8 + child_datasize;
-	}
-    }
-}
-
-
-
-SweepValue* ValueSectionSweep::get_values(ChildList &filter) {
-    const char *buf = valuebuf;
-
-    SweepValue *value = new_value();
-    
-    int n = *psf->header->get_property("PSF sweep points");
-    
-    int windowoffset = 0;
-    value->deserialize(buf, &n, windowoffset, psf, filter);
-
-    return value;
-}
-
-PSFVector* ValueSectionSweep::get_values(std::string name) {
-    // Create filter for retrieving the trace with correct name
-    ChildList filter;
-    Chunk &trace = psf->traces->get_trace_by_name(name);
-    filter.push_back(&trace);
-    
-    SweepValue *v = get_values(filter);
-    
-    return (*v)[0];
-}
-
-
-PSFVector* ValueSectionSweep::get_param_values() {
-    ChildList filter;
-    SweepValue *v = get_values(filter);
-    return v->get_param_values();
-}
-
-
-int ValueSectionSweep::deserialize(const char *buf, int abspos) {
-    const char *startbuf = buf;
-
-    buf += Chunk::deserialize(buf);
-	
-    uint32_t endpos = GET_INT32(buf);
-    buf += sizeof(uint32_t);
-
-    if (windowedsweep) {
-	ZeroPad pad;
-	buf += pad.deserialize(buf);
-    }  
-        
-    _create_valueoffsetmap(windowedsweep);
-
-    valuebuf = buf;
-
-    endbuf = startbuf + endpos - abspos;
-
-    return endpos-abspos;
-};
 
 template<class T>
 int SweepValueIterator<T>::deserialize() {

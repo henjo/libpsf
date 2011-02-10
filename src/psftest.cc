@@ -17,21 +17,22 @@ void noisesummary() {
 	    Struct& data = (*valvec)[3];
 	    if(data.find(std::string("total")) != data.end())
 		sum += (double)*data[std::string("total")];
+	    delete(valvec);
 	}
     }
     std::cout << "Total: " << sum << std::endl;
 }
 
 int main() {
-    std::string dcopfile("/nfs/home/henrik/spectre/1/dc.raw/dcOpInfo.info");
+    std::string dcopfile("../examples/data/opBegin");
     std::string pssfdfile("../examples/data/pss0.fd.pss");
     std::string tranfile("../examples/data/timeSweep");
 
     PSFDataSet psftran(tranfile);
     PSFDataSet pssfd(pssfdfile);
+    PSFDataSet pssop(dcopfile);
 
-
-    //noisesummary();
+    noisesummary();
     
     // std::cout << "Header properties:" << std::endl;
     // PropertyMap headerprops(psfnoise.get_header_properties());

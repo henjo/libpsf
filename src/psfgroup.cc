@@ -66,6 +66,11 @@ Group::Group(GroupDef *_groupdef, std::vector<int> *_filter) : groupdef(_groupde
     }
 }
 
+Group::~Group() {
+    for(const_iterator i=begin(); i != end(); i++)
+	delete(*i);
+}
+
 int Group::deserialize(const char *buf, int n, int windowsize) {
     const char *startbuf = buf;
 

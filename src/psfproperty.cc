@@ -2,6 +2,18 @@
 #include "psfdata.h"
 #include "psfinternal.h"
 
+Property::~Property() {
+    if(value) 
+	delete(value);
+}
+
+Property::Property(Property const &x) {
+    if(x.value)
+	value = x.value->clone();
+    else
+	value = NULL;
+}
+
 int Property::deserialize(const char *buf) {
     const char *startbuf = buf;
 

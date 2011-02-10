@@ -6,6 +6,11 @@
 // Container
 //
 
+Container::~Container() {
+    for(int i=0; i < size(); i++)
+	delete(at(i));
+}
+
 Chunk * Container::deserialize_child(const char **buf) {
     Chunk *child = NULL;
 

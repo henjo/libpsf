@@ -100,6 +100,10 @@ int StructScalar::deserialize(const char *buf) {
 }
 
 // Struct
+Struct::~Struct() {
+    for(Struct::const_iterator i=begin(); i != end(); i++)
+	delete(i->second);
+}
 int Struct::deserialize(const char *buf) {
     const char *startbuf = buf;
 
@@ -126,6 +130,14 @@ StructScalar::operator double() const {
     return -1;
 };
 
+template<>
+PSFDoubleVector::PSFVectorT() { init = 0; }
+template<>
+PSFInt32Vector::PSFVectorT() { init = 0; }
+template<>
+PSFComplexDoubleVector::PSFVectorT() { init = PSFComplexDouble(0,0); }
+
+
 std::ostream &operator<<(std::ostream &stream, Struct &o) {
     stream << "Struct(";
     for(Struct::iterator i=o.begin(); i != o.end(); i++)
@@ -135,32 +147,6 @@ std::ostream &operator<<(std::ostream &stream, Struct &o) {
 
 int Struct::datasize() const {
     return structdef->datasize(); 
-}
-
-PSFVector *PSFVector::create(int type_id) {	
-    switch(type_id) {
-    case TYPEID_DOUBLE:
-	return new PSFDoubleVector();
-    case TYPEID_COMPLEXDOUBLE:
-	return new PSFComplexDoubleVector();
-    case TYPEID_STRUCT:
-	return new StructVector();
-    default:
-	throw UnknownType(type_id);    
-    }
-}
-
-PSFScalar *PSFScalar::create(int type_id) {	
-    switch(type_id) {
-    case TYPEID_DOUBLE:
-	return new PSFDoubleScalar();
-    case TYPEID_COMPLEXDOUBLE:
-	return new PSFComplexDoubleScalar();
-    case TYPEID_STRUCT:
-	return new StructScalar();
-    default:
-	throw UnknownType(type_id);    
-    }
 }
 
 int psfdata_size(int datatypeid) {

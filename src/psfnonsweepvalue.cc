@@ -18,6 +18,11 @@ PSFScalar* ValueSectionNonSweep::get_value(std::string name) {
     return dynamic_cast<NonSweepValue &>(get_child(name)).get_value();
 }
 
+NonSweepValue::~NonSweepValue() {
+    if(value)
+	delete(value);
+}
+
 int NonSweepValue::deserialize(const char *buf) {
     const char *startbuf = buf;
 
@@ -27,9 +32,10 @@ int NonSweepValue::deserialize(const char *buf) {
     buf += name.deserialize(buf);	
     valuetypeid = GET_INT32(buf); buf+=4;
     
-    value = psf->types->get_typedef(valuetypeid).new_scalar();
-
-    buf += value->deserialize(buf);
+    DataTypeDef& def = psf->types->get_typedef(valuetypeid);
+    value = def.new_scalar();
+    
+    buf += def.deserialize_data(value->ptr(), buf);
     
     // Read optional properties
     while(true) {  	

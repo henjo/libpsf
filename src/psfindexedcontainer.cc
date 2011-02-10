@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "psf.h"
 #include "psfdata.h"
 #include "psfinternal.h"
@@ -49,17 +51,29 @@ int IndexedContainer::deserialize(const char *buf, int abspos) {
     uint32_t endpos = GET_INT32(buf);
     buf += sizeof(uint32_t);
 
-    SubContainer subcontainer(this);
-    buf += subcontainer.deserialize(buf, abspos + (buf-startbuf));
 
-    // Copy members of subcontainer
-    resize(subcontainer.size());
-    copy(subcontainer.begin(), subcontainer.end(), begin());
+    // Sub container
+    uint32_t subcontainer_typeid = GET_INT32(buf); 
+    buf += sizeof(uint32_t); 
+    
+    assert(subcontainer_typeid == 22);
+
+    uint32_t subendpos = GET_INT32(buf);
+    buf += sizeof(uint32_t);
+
+    int i = 0;
+    while(abspos + (buf-startbuf) < subendpos) {
+	Chunk *chunk = deserialize_child(&buf); 
+	if(chunk)
+	    add_child(chunk);
+	else	
+	    break;
+    }
 
     Index index;
     buf += index.deserialize(buf);
 
-    for(Container::const_iterator child=subcontainer.begin(); child !=subcontainer.end(); child++) {
+    for(Container::const_iterator child=begin(); child != end(); child++) {
 	idmap[(*child)->get_id()] = *child;
 	std::string &name = (*child)->get_name();
 	namemap[name] = *child;

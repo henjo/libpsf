@@ -34,12 +34,16 @@ typedef double PSFDouble;
 typedef std::complex<double> PSFComplexDouble;
 typedef std::string PSFString;
 
+// 
+// Composite data types
+//
 class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
  private:
     StructDef *structdef;
  public:
     Struct() : structdef(NULL) {}
     Struct(StructDef *_structdef) { structdef = _structdef; }
+    ~Struct();
 
     int datasize() const;
 
@@ -53,10 +57,12 @@ class Group: public std::vector<PSFVector *> {
     GroupDef *groupdef;
     std::vector<int> *filter;
  public:
+    Group(GroupDef *groupdef, std::vector<int> *filter=NULL);
+    ~Group();
+    
     void print(std::ostream &stream) {
 	stream << groupdef;
     };
-    Group(GroupDef *groupdef, std::vector<int> *filter=NULL);
     int datasize() const { return 0; }
     int deserialize(const char *buf, int n, int windowsize);
 };
@@ -68,12 +74,14 @@ class PSFScalar {
  private:
     virtual void print(std::ostream &stream)=0;
  public:
+    virtual ~PSFScalar() {};
     virtual int deserialize(const char *buf) { return 0; };
 
     virtual operator int() const { return -1; }
     virtual operator double() const { return 0.0; }
     friend std::ostream &operator<<(std::ostream &stream, PSFScalar &o);
-    static PSFScalar *create(int type_id);
+    virtual void *ptr()=0;
+    virtual PSFScalar *clone()=0;
 };
 
 template<class T> 
@@ -83,9 +91,14 @@ class PSFScalarT : public PSFScalar {
  public:
     T value;
 
+    PSFScalarT() {};
+    PSFScalarT(const T& init) : value(init) {};
+
     operator double() const;
     operator int() const;
     int deserialize(const char *buf);
+    void *ptr() { return &value; }
+    PSFScalar* clone() { return new PSFScalarT(*this); }
 };
 
 typedef PSFScalarT<PSFDouble> PSFDoubleScalar;
@@ -100,6 +113,7 @@ typedef PSFScalarT<Struct> StructScalar;
 //
 class PSFVector {
  public:
+    virtual ~PSFVector() {};
     int type_id;
 
     virtual std::size_t size()=0;
@@ -110,14 +124,16 @@ class PSFVector {
     
     virtual void extend(const PSFVector *) {};
 
-    static PSFVector *create(int type_id);
-
     virtual void *ptr_at(int i)=0;
 };
 
 template<class T>
 class PSFVectorT : public PSFVector, public std::vector<T> {
+ private:
+    T init;
  public:
+    PSFVectorT();
+    PSFVectorT(const T& _init) : init(_init) {};
     void extend(const PSFVector *vec) {
 	const PSFVectorT& tvec = dynamic_cast<const PSFVectorT &>(*vec);
 	reserve(std::vector<T>::size() + distance(tvec.begin(), tvec.end()));
@@ -127,9 +143,7 @@ class PSFVectorT : public PSFVector, public std::vector<T> {
     void *ptr_at(int i) { return &std::vector<T>::at(i); }
 
     std::size_t size() { return std::vector<T>::size(); };
-    void resize(std::size_t n) { std::vector<T>::resize(n); };
-    
-    
+    void resize(std::size_t n) { std::vector<T>::resize(n, init); };
 };
 
 typedef PSFVectorT<PSFDouble> PSFDoubleVector;

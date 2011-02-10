@@ -17,6 +17,21 @@ PSFFile::PSFFile(std::string _filename) :
     fd = -1;
 }
 
+PSFFile::~PSFFile() {
+    if(header)
+	delete(header);
+    if(types)
+	delete(types);
+    if(sweeps)
+	delete(sweeps);
+    if(traces)
+	delete(traces);
+    if(sweepvalues)
+	delete(sweepvalues);
+    if(nonsweepvalues)
+	delete(nonsweepvalues);
+}
+
 void PSFFile::deserialize(const char *buf, int size) {
     // Last word contains the size of the data
     uint32_t datasize;	

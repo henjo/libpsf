@@ -79,10 +79,8 @@ public:
     static const int type = -1;
     int chunktype;
 
-
-    Chunk() {
-	chunktype = -1;
-    }
+    Chunk() { chunktype = -1; }
+    virtual ~Chunk() {};
 
     virtual void print(std::ostream &stream) {
 	stream << "Chunk()";
@@ -105,6 +103,11 @@ private:
     PSFStringScalar name;
     PSFScalar *value;
 public:
+    Property() : value(NULL) {}
+    Property(Property const &);
+
+    virtual ~Property();
+
     virtual std::string& get_name() { return name.value; }
 
     PSFScalar *get_value() { return value; }
@@ -123,6 +126,8 @@ public:
 class Container: public Chunk, public ChildList {
 private:
 public:
+    virtual ~Container();
+
     virtual Chunk *child_factory(int chunktype) {
 	return NULL;
     }
@@ -134,11 +139,6 @@ public:
     virtual void add_child(Chunk *child) { push_back(child); };
     virtual Chunk & get_child(int id);
     virtual Chunk & get_child(std::string name);
-
-    virtual ~Container() {
-	//    	for(int i=0; i<size(); i++)
-	//    	    delete (*this)[i];
-    }
 
 };
 
@@ -206,7 +206,8 @@ private:
  public:
     static const int type = 16;
 
-    DataTypeDef() { chunktype = type; }
+    DataTypeDef() : structdef(NULL) { chunktype = type; }
+    ~DataTypeDef();
 
     void *new_dataobject();
     PSFScalar *new_scalar();
@@ -423,12 +424,12 @@ class NonSweepValue : public Chunk {
     int id;
     PSFStringScalar name;
     int valuetypeid;
-    DataTypeDef *valuetype;	
     PSFScalar *value;
     PropertyList properties;
     PSFFile *psf;
  public:
-    NonSweepValue(PSFFile *_psf) : psf(_psf) {};
+    NonSweepValue(PSFFile *_psf) : psf(_psf), value(NULL) {};
+    virtual ~NonSweepValue();
 
     static const int type = 16;
 
@@ -451,9 +452,10 @@ class SweepValue: public Chunk, public std::vector<PSFVector *> {
     PSFVector *paramvalues;
 
 public:
-    static const int type = 16;
-
     SweepValue() : paramvalues(NULL) { chunktype = type; }
+    virtual ~SweepValue();
+
+    static const int type = 16;
 
     std::string& get_name() { return name.value; }
 
@@ -524,8 +526,6 @@ private:
     
     const char *valuebuf, *endbuf;
     
-    SweepValue *sweepvalue;
-
     bool windowedsweep;
 
 public:
@@ -557,6 +557,9 @@ class PSFFile {
     void deserialize(const char *buf, int size);
   
 public:	
+    PSFFile(std::string _filename);
+    ~PSFFile();
+    
     std::string filename;
     HeaderSection *header;
     TypeSection *types;
@@ -564,8 +567,6 @@ public:
     TraceSection *traces;
     ValueSectionSweep *sweepvalues;
     ValueSectionNonSweep *nonsweepvalues;
-
-    PSFFile(std::string _filename);
 
     PSFVector *get_param_values();
     PSFVector *get_values(std::string name);

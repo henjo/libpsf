@@ -6,6 +6,11 @@
 // DataTypeDef
 //
 
+DataTypeDef::~DataTypeDef() {
+    if(structdef)
+	delete(structdef);
+}
+
 int DataTypeDef::deserialize(const char *buf) {
     const char *startbuf = buf;
 
@@ -74,22 +79,36 @@ int DataTypeDef::deserialize_data(void *data, const char *buf) {
 	*(PSFComplexDouble *)data = PSFComplexDouble(re, im);
 	return 8;
     case TYPEID_STRUCT: 
-	{	
-	    Struct *s = (Struct *)data;
-	    *s = Struct(structdef);
-	    return s->deserialize(buf);
-	}
+	return ((Struct *)data)->deserialize(buf);
     default:
 	throw UnknownType(datatypeid);    
     }
 }
 
 PSFScalar *DataTypeDef::new_scalar() {
-    return PSFScalar::create(datatypeid);
+    switch(datatypeid) {
+    case TYPEID_DOUBLE:
+	return new PSFDoubleScalar();
+    case TYPEID_COMPLEXDOUBLE:
+	return new PSFComplexDoubleScalar();
+    case TYPEID_STRUCT:
+	return new StructScalar(Struct(structdef));
+    default:
+	throw UnknownType(datatypeid);    
+    }
 }
 
 PSFVector *DataTypeDef::new_vector() {
-    return PSFVector::create(datatypeid);
+    switch(datatypeid) {
+    case TYPEID_DOUBLE:
+	return new PSFDoubleVector();
+    case TYPEID_COMPLEXDOUBLE:
+	return new PSFComplexDoubleVector();
+    case TYPEID_STRUCT:
+	return new StructVector(Struct(structdef));
+    default:
+	throw UnknownType(datatypeid);    
+    }
 }
 
 //
