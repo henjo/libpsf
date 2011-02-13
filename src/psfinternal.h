@@ -52,13 +52,13 @@ class SweepValueSimple;
 //
 // PSF data types
 //
-typedef std::vector<Chunk *> ChildList;
+typedef std::vector<const Chunk *> ChildList;
 typedef std::vector<Property> PropertyList;
 typedef std::tr1::unordered_map<int,int> TraceIDOffsetMap;
 typedef std::vector<int> TraceIDList;
 typedef std::vector<std::string> NameList;
 typedef std::vector<SweepValue> SweepValueList;
-typedef std::map<std::string, PSFScalar *> PropertyMap;
+typedef std::map<std::string, const PSFScalar *> PropertyMap;
 
 class DataList : public std::vector<PSFScalar *> {
  public:
@@ -82,21 +82,21 @@ public:
     Chunk() { chunktype = -1; }
     virtual ~Chunk() {};
 
-    virtual void print(std::ostream &stream) {
+    virtual void print(std::ostream &stream) const {
 	stream << "Chunk()";
     };
 
     virtual int deserialize(const char *buf);
-    virtual int32_t get_id() { return -1; };
-    virtual std::string& get_name() { throw(NotImplemented()); }
+    virtual int32_t get_id() const { return -1; };
+    virtual const std::string& get_name() const { throw(NotImplemented()); }
 
-    virtual void * new_dataobject() { return NULL; };
-    virtual PSFScalar* new_scalar() { return NULL; };
-    virtual PSFVector* new_vector() { return NULL; };
-    virtual int datasize() { return 0; };
+    virtual void * new_dataobject() const { return NULL; };
+    virtual PSFScalar* new_scalar() const { return NULL; };
+    virtual const PSFVector* new_vector() const { return NULL; };
+    virtual int datasize() const { return 0; };
 };
 
-std::ostream &operator<<(std::ostream &stream, Chunk &o);
+std::ostream &operator<<(std::ostream &stream, const Chunk &o);
 
 class Property: public Chunk {	
 private:
@@ -108,15 +108,15 @@ public:
 
     virtual ~Property();
 
-    virtual std::string& get_name() { return name.value; }
+    const std::string& get_name() const { return name.value; }
 
-    PSFScalar *get_value() { return value; }
+    const PSFScalar *get_value() const { return value; }
     
     static bool ischunk(int chunktype) {
 	return (chunktype >= 33) && (chunktype <= 35);
     };
 
-    virtual void print(std::ostream &stream) {
+    virtual void print(std::ostream &stream) const {
 	stream << "Property(" << name << "," << *value << ")";
     };
     
@@ -128,17 +128,17 @@ private:
 public:
     virtual ~Container();
 
-    virtual Chunk *child_factory(int chunktype) {
+    virtual Chunk *child_factory(int chunktype) const {
 	return NULL;
     }
     
     Chunk *deserialize_child(const char **buf);
 
-    virtual NameList get_names();
+    virtual NameList get_names() const;
 
     virtual void add_child(Chunk *child) { push_back(child); };
-    virtual Chunk & get_child(int id);
-    virtual Chunk & get_child(std::string name);
+    virtual const Chunk & get_child(int id) const;
+    virtual const Chunk & get_child(std::string name) const;
 
 };
 
@@ -146,7 +146,7 @@ class SimpleContainer: public Container {
 public:
     virtual int deserialize(const char *buf, int abspos);
 
-    virtual void print(std::ostream &stream);
+    virtual void print(std::ostream &stream) const;
     
 };
 
@@ -154,7 +154,7 @@ class SubContainer: public SimpleContainer {
 private:
     Container *parent;
 public:
-    virtual Chunk *child_factory(int chunktype) {
+    virtual Chunk *child_factory(int chunktype) const {
 	return parent->child_factory(chunktype);
     };
 
@@ -183,15 +183,15 @@ class TraceIndex: public Chunk {
 
 class IndexedContainer: public Container {
  private:
-    std::tr1::unordered_map<int, Chunk *> idmap;
-    std::tr1::unordered_map<std::string, Chunk *> namemap;
+    std::tr1::unordered_map<int, const Chunk *> idmap;
+    std::tr1::unordered_map<std::string, const Chunk *> namemap;
  public:	
     virtual int deserialize(const char *buf, int abspos);
 
-    virtual Chunk & get_child(int id);
-    virtual Chunk & get_child(std::string name);
+    virtual const Chunk & get_child(int id) const;
+    virtual const Chunk & get_child(std::string name) const;
 
-    virtual void print(std::ostream &stream);
+    virtual void print(std::ostream &stream) const;
 };
 
 class DataTypeDef: public Container {
@@ -209,13 +209,13 @@ private:
     DataTypeDef() : structdef(NULL) { chunktype = type; }
     ~DataTypeDef();
 
-    void *new_dataobject();
-    PSFScalar *new_scalar();
-    PSFVector *new_vector();
+    void *new_dataobject() const;
+    PSFScalar *new_scalar() const;
+    PSFVector *new_vector() const;
 
-    virtual std::string& get_name() { return name.value; }
+    virtual const std::string& get_name() const { return name.value; }
 
-    virtual Chunk *child_factory(int chunktype) {
+    virtual Chunk *child_factory(int chunktype) const {
 	if(Property::ischunk(chunktype))
 	    return new Property();
 	else
@@ -224,11 +224,11 @@ private:
 
     virtual int deserialize(const char *buf);
     
-    int deserialize_data(void *data, const char *buf);
+    int deserialize_data(void *data, const char *buf) const;
 
     int datasize() const { return _datasize; }
 
-    virtual int32_t get_id() { return id; };
+    virtual int32_t get_id() const { return id; };
 
     static bool ischunk(int chunktype) {
 	return chunktype == DataTypeDef::type;
@@ -244,7 +244,7 @@ private:
 
     PSFFile *psf;
 
-    virtual Chunk *child_factory(int chunktype);
+    virtual Chunk *child_factory(int chunktype) const;
 
     virtual int deserialize(const char *buf);
 
@@ -256,10 +256,10 @@ public:
 
     GroupDef(PSFFile *_psf) : psf(_psf) { chunktype = type; }
 
-    std::string& get_name() { return name.value; }
+    const std::string& get_name() const { return name.value; }
 
-    void *new_dataobject();
-    Group *new_group(std::vector<int> *filter);
+    void *new_dataobject() const;
+    Group *new_group(std::vector<int> *filter) const;
 
     static bool ischunk(int chunktype) {
 	return chunktype == GroupDef::type;
@@ -277,7 +277,7 @@ private:
     StructDef *structdef;
     PSFFile *psf;
     
-    virtual Chunk *child_factory(int chunktype) {
+    virtual Chunk *child_factory(int chunktype) const {
 	if(Property::ischunk(chunktype))
 	    return new Property();
 	else
@@ -289,24 +289,24 @@ public:
 
     DataTypeRef(PSFFile *_psf) { chunktype = type; psf = _psf; }
 
-    virtual int32_t get_id() { return id; };
+    virtual int32_t get_id() const { return id; };
 
-    virtual std::string& get_name() { return name.value; }
+    virtual const std::string& get_name() const { return name.value; }
 
-    DataTypeDef& get_def();
+    const DataTypeDef& get_def() const;
 
     virtual int deserialize(const char *buf);
 
-    DataTypeDef& get_datatype();
+    const DataTypeDef& get_datatype() const;
 
-    void *new_dataobject();
-    PSFVector *new_vector();
+    void *new_dataobject() const;
+    PSFVector *new_vector() const;
 
-    int deserialize_data(void *data, const char *buf) { 
+    int deserialize_data(void *data, const char *buf) const { 
 	return get_def().deserialize_data(data, buf); 
     }
 
-    int datasize();
+    int datasize() const;
 
     static bool ischunk(int chunktype) {
 	return chunktype == DataTypeDef::type;
@@ -318,11 +318,11 @@ class StructDef: public Container {
  private:
     int _datasize;
 public:
-    virtual Chunk *child_factory(int chunktype);
+    virtual Chunk *child_factory(int chunktype) const;
 
-    Struct *get_data_object();
+    void* new_dataobject() const;
     
-    int datasize() { return _datasize; };
+    int datasize() const { return _datasize; };
 
     virtual int deserialize(const char *buf);
 };
@@ -340,23 +340,23 @@ public:
 	chunktype = HeaderSection::type;
     }
 
-    virtual Chunk *child_factory(int chunktype);
+    virtual Chunk *child_factory(int chunktype) const;
     
     virtual int deserialize(const char *buf, int abspos);
 
-    const PropertyMap& get_header_properties() { return properties; }
+    const PropertyMap& get_header_properties() const { return properties; }
 
-    PSFScalar *get_property(std::string key);
+    const PSFScalar *get_property(std::string key) const;
 };
 
 class TypeSection: public IndexedContainer {
 public:	
     static const int type = 21;
 
-    virtual Chunk *child_factory(int chunktype);
+    virtual Chunk *child_factory(int chunktype) const;
 
-    DataTypeDef& get_typedef(int id) { 
-	return dynamic_cast<DataTypeDef &>(get_child(id));
+    const DataTypeDef& get_typedef(int id) const { 
+	return dynamic_cast<const DataTypeDef &>(get_child(id));
     }
 
     TypeSection() {
@@ -371,16 +371,17 @@ class TraceSection: public IndexedContainer {
 public:	
     static const int type = 21;
 
-    virtual Chunk *child_factory(int chunktype);
-
-    NameList get_names();
-
-    DataTypeRef& get_trace_by_name(std::string name);
-
     TraceSection(PSFFile *_psf) {
 	chunktype = TypeSection::type;
 	psf = _psf;
     }
+
+    virtual Chunk *child_factory(int chunktype) const;
+
+    NameList get_names() const;
+
+    const DataTypeRef& get_trace_by_name(std::string name) const;
+
 };
 
 class ZeroPad: public Chunk {
@@ -406,17 +407,18 @@ class SweepSection: public SimpleContainer {
     PSFFile *psf;
  public:
     static const int type = 21;
-    virtual Chunk *child_factory(int chunktype);
-
-    
-    DataTypeRef & get_sweep(int id) {
-	return dynamic_cast<DataTypeRef &>(get_child(id));
-    }
 
     SweepSection(PSFFile *_psf) {
 	chunktype = SweepSection::type;
 	psf = _psf;
     }
+
+    virtual Chunk *child_factory(int chunktype) const;
+
+    const DataTypeRef & get_sweep(int id) const {
+	return dynamic_cast<const DataTypeRef &>(get_child(id));
+    }
+
 };
 
 class NonSweepValue : public Chunk {
@@ -433,9 +435,11 @@ class NonSweepValue : public Chunk {
 
     static const int type = 16;
 
-    std::string& get_name() { return name.value; }
+    const std::string& get_name() const { return name.value; }
 
-    PSFScalar* get_value() { return value; }
+    const PSFScalar* get_value() const { return value; } 
+
+    const PropertyList& get_properties() const { return properties; }
 
     virtual int deserialize(const char *buf);
 
@@ -457,7 +461,7 @@ public:
 
     static const int type = 16;
 
-    std::string& get_name() { return name.value; }
+    const std::string& get_name() const { return name.value; }
 
     PSFVector *get_param_values() const { return paramvalues; }
     virtual int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter) {};
@@ -510,9 +514,10 @@ class ValueSectionNonSweep: public IndexedContainer {
     
     ValueSectionNonSweep(PSFFile *_psf) : psf(_psf) {};
 
-    PSFScalar* get_value(std::string name);
-   
-    virtual Chunk *child_factory(int chunktype);
+    const PSFScalar* get_value(std::string name) const;
+    PropertyMap get_value_properties(const std::string name) const;
+    
+    virtual Chunk *child_factory(int chunktype) const;
 
 };
 
@@ -536,14 +541,14 @@ public:
     virtual int deserialize(const char *buf, int abspos);
     
     // Allocate a value of correct class
-    SweepValue *new_value();
+    SweepValue *new_value() const;
 
-    SweepValue *get_values(ChildList &filter);
-    PSFVector* get_values(std::string name);
-    PSFVector* get_param_values();
+    SweepValue *get_values(ChildList &filter) const;
+    PSFVector* get_values(std::string name) const;
+    PSFVector* get_param_values() const;
 
-    int valueoffset(int id);
-    int valuesize() { return _valuesize; };
+    int valueoffset(int id) const;
+    int valuesize() const { return _valuesize; };
 
     typedef SweepValueIterator<SweepValue> iterator;
     const iterator begin(SweepValue *, ChildList &filter) const ;
@@ -568,16 +573,17 @@ public:
     ValueSectionSweep *sweepvalues;
     ValueSectionNonSweep *nonsweepvalues;
 
-    PSFVector *get_param_values();
-    PSFVector *get_values(std::string name);
-    PSFScalar* get_value(std::string name);
+    PSFVector *get_param_values() const;
+    PropertyMap get_value_properties(std::string name) const;
+    PSFVector *get_values(std::string name) const;
+    const PSFScalar* get_value(std::string name) const;
     
-    NameList get_names();
+    NameList get_names() const;
     
     void open();
     void close();
     
-    bool validate();
+    bool validate() const;
 };
 
 #endif

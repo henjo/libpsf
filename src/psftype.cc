@@ -47,7 +47,7 @@ int DataTypeDef::deserialize(const char *buf) {
     return buf - startbuf;
 };
 
-void * DataTypeDef::new_dataobject() {
+void * DataTypeDef::new_dataobject() const {
     switch(datatypeid) {
     case TYPEID_INT8:
 	return new PSFInt8;
@@ -62,7 +62,7 @@ void * DataTypeDef::new_dataobject() {
     }
 }
 
-int DataTypeDef::deserialize_data(void *data, const char *buf) {
+int DataTypeDef::deserialize_data(void *data, const char *buf) const {
     switch(datatypeid) {
     case TYPEID_INT8:
 	*((PSFInt8 *)data) = *((int8_t *)buf+3);
@@ -85,7 +85,7 @@ int DataTypeDef::deserialize_data(void *data, const char *buf) {
     }
 }
 
-PSFScalar *DataTypeDef::new_scalar() {
+PSFScalar *DataTypeDef::new_scalar() const {
     switch(datatypeid) {
     case TYPEID_DOUBLE:
 	return new PSFDoubleScalar();
@@ -98,7 +98,7 @@ PSFScalar *DataTypeDef::new_scalar() {
     }
 }
 
-PSFVector *DataTypeDef::new_vector() {
+PSFVector *DataTypeDef::new_vector() const {
     switch(datatypeid) {
     case TYPEID_DOUBLE:
 	return new PSFDoubleVector();
@@ -115,8 +115,8 @@ PSFVector *DataTypeDef::new_vector() {
 // DataTypeRef
 //
 
-DataTypeDef& DataTypeRef::get_def() { 	
-    return dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid)); 
+const DataTypeDef& DataTypeRef::get_def() const { 	
+    return dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid)); 
 }	
 
 int DataTypeRef::deserialize(const char *buf) {	
@@ -144,20 +144,20 @@ int DataTypeRef::deserialize(const char *buf) {
     return buf - startbuf;
 }
 
-void * DataTypeRef::new_dataobject() {
-    DataTypeDef &def = dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid));
+void * DataTypeRef::new_dataobject() const {
+    const DataTypeDef &def = dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid));
     return def.new_dataobject();
 }
 
-PSFVector * DataTypeRef::new_vector() {
-    DataTypeDef &def = dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid));
+PSFVector * DataTypeRef::new_vector() const {
+    const DataTypeDef &def = dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid));
     return def.new_vector();
 }
 
-DataTypeDef& DataTypeRef::get_datatype() { 
-    return dynamic_cast<DataTypeDef&>(psf->types->get_child(datatypeid)); 
+const DataTypeDef& DataTypeRef::get_datatype() const { 
+    return dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid)); 
 }
 
-int DataTypeRef::datasize() {
+int DataTypeRef::datasize() const {
     return get_datatype().datasize();
 }

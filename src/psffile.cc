@@ -115,7 +115,7 @@ void PSFFile::close() {
     }
 }
 
-bool PSFFile::validate() {
+bool PSFFile::validate() const {
     std::ifstream fstr(filename.c_str());
 	
     fstr.seekg(-12, std::ios::end);
@@ -128,21 +128,25 @@ bool PSFFile::validate() {
     return !strcmp(clarissa, "Clarissa");
 }	
 
-PSFVector * PSFFile::get_param_values() {
+PSFVector * PSFFile::get_param_values() const {
     return sweepvalues->get_param_values();
 }
 
-PSFVector * PSFFile::get_values(std::string name) {
+PSFVector * PSFFile::get_values(std::string name) const {
     if(sweepvalues)
 	return sweepvalues->get_values(name);
 }	
 
-PSFScalar * PSFFile::get_value(std::string name) {
+PropertyMap PSFFile::get_value_properties(std::string name) const {
+    return nonsweepvalues->get_value_properties(name);
+}
+
+const PSFScalar * PSFFile::get_value(std::string name) const {
     if(nonsweepvalues)
 	return nonsweepvalues->get_value(name);
 }
 
-NameList PSFFile::get_names() {
+NameList PSFFile::get_names() const {
     if(traces) {
 	return traces->get_names();
     } else if(nonsweepvalues) {

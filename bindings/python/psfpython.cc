@@ -20,14 +20,29 @@ struct Struct_to_python {
 };
 
 struct PSFScalar_to_python {
-    static PyObject *convert(PSFScalar *scalar) {
-	if (PSFDoubleScalar *p = dynamic_cast<PSFDoubleScalar *>(scalar)) {
+    static PyObject *convert(const PSFScalar *scalar) {
+	if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar)) {
 	    return PyFloat_FromDouble(p->value);
-	} else if(StructScalar *p = dynamic_cast<StructScalar *>(scalar)) {
+	} else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar)) {
+	    return PyInt_FromLong((int)*p);
+	} else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar)) {
+	    return PyString_FromString(p->tostring().c_str());
+	} else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar)) {
 	    return Struct_to_python::convert(p->value);
 	} else {
-	    return NULL;
+	    throw NotImplemented();
 	}
+    }
+};
+
+struct PropertyMap_to_python {
+    static PyObject *convert(const PropertyMap& propmap) {
+	PyObject *dict = PyDict_New();
+
+	for(PropertyMap::const_iterator i = propmap.begin(); i != propmap.end(); i++)
+	    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+			   PSFScalar_to_python::convert(i->second));	
+	return dict;
     }
 };
 
@@ -73,8 +88,9 @@ struct PSFVector_to_numpyarray {
 BOOST_PYTHON_MODULE(_psf)
 { 
     import_array();
+    to_python_converter<PropertyMap, PropertyMap_to_python>();
     to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
-    to_python_converter<PSFScalar *, PSFScalar_to_python>();
+    to_python_converter<const PSFScalar *, PSFScalar_to_python>();
     to_python_converter<Struct, Struct_to_python>();
 
     //    class_<PSFVector>("PSFVector");
@@ -84,12 +100,17 @@ BOOST_PYTHON_MODULE(_psf)
     ;
 
     class_<PSFDataSet>("PSFDataSet", init<std::string>())
+	.def("get_sweep_npoints", &PSFDataSet::get_sweep_npoints)
 	.def("get_signal_names", &PSFDataSet::get_signal_names)
-	.def("get_param_values", &PSFDataSet::get_param_values,
+	.def("get_sweep_values", &PSFDataSet::get_sweep_values,
 	     return_value_policy<return_by_value>())
-	.def("get_signal_values", &PSFDataSet::get_signal_values,
+	.def("get_signal_vector", &PSFDataSet::get_signal_vector,
 	     return_value_policy<return_by_value>())
-	.def("get_signal_value", &PSFDataSet::get_signal_value,
+	.def("get_signal_scalar", &PSFDataSet::get_signal_scalar,
+	     return_value_policy<return_by_value>())
+	.def("get_header_properties", &PSFDataSet::get_header_properties,
+	     return_value_policy<return_by_value>())
+	.def("get_signal_properties", &PSFDataSet::get_signal_properties,
 	     return_value_policy<return_by_value>())
     ;
 }

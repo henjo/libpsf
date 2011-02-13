@@ -2,7 +2,7 @@
 #include "psfdata.h"
 #include "psfinternal.h"
 
-Chunk * TraceSection::child_factory(int chunktype) {
+Chunk * TraceSection::child_factory(int chunktype) const {
     if(DataTypeRef::ischunk(chunktype))
 	return new DataTypeRef(psf);
     else if(GroupDef::ischunk(chunktype))
@@ -13,13 +13,13 @@ Chunk * TraceSection::child_factory(int chunktype) {
     }
 }
 
-NameList TraceSection::get_names() {
+NameList TraceSection::get_names() const {
     NameList result;
 
     for(const_iterator i=begin(); i != end(); i++) {
-	GroupDef *group = dynamic_cast<GroupDef *>(*i);
-	if(group) {
-	    NameList grouptracenames = group->get_names();
+	const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*i);
+	if(groupdef) {
+	    NameList grouptracenames = groupdef->get_names();
 	    result.reserve(result.size() + distance(grouptracenames.begin(), grouptracenames.end()));
 	    result.insert(result.end(), grouptracenames.begin(), grouptracenames.end());
 	} else
@@ -28,12 +28,12 @@ NameList TraceSection::get_names() {
     return result;
 }
 
-DataTypeRef & TraceSection::get_trace_by_name(const std::string name) {
+const DataTypeRef & TraceSection::get_trace_by_name(const std::string name) const {
     for(const_iterator i=begin(); i != end(); i++) {
-	GroupDef *groupdef = dynamic_cast<GroupDef *>(*i);
+	const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*i);
 	if(groupdef) {
-	    return dynamic_cast<DataTypeRef &>(groupdef->get_child(name));
+	    return dynamic_cast<const DataTypeRef &>(groupdef->get_child(name));
 	} else
-	    return dynamic_cast<DataTypeRef &>(get_child(name));
+	    return dynamic_cast<const DataTypeRef &>(get_child(name));
     }
 }

@@ -5,7 +5,7 @@
 #include <assert.h>
 
 
-Chunk * ValueSectionNonSweep::child_factory(int chunktype) {
+Chunk * ValueSectionNonSweep::child_factory(int chunktype) const {
     if(NonSweepValue::ischunk(chunktype))
 	return new NonSweepValue(psf);
     else {
@@ -14,8 +14,18 @@ Chunk * ValueSectionNonSweep::child_factory(int chunktype) {
     }
 }
 
-PSFScalar* ValueSectionNonSweep::get_value(std::string name) {
-    return dynamic_cast<NonSweepValue &>(get_child(name)).get_value();
+const PSFScalar* ValueSectionNonSweep::get_value(std::string name) const {
+    return dynamic_cast<const NonSweepValue &>(get_child(name)).get_value();
+}
+
+PropertyMap ValueSectionNonSweep::get_value_properties(const std::string name) const {
+    const PropertyList& plist = dynamic_cast<const NonSweepValue &>(get_child(name)).get_properties();
+    PropertyMap pmap;
+
+    for(PropertyList::const_iterator i = plist.begin(); i != plist.end(); i++)
+	pmap[i->get_name()] = i->get_value();
+
+    return pmap;
 }
 
 NonSweepValue::~NonSweepValue() {
@@ -32,7 +42,7 @@ int NonSweepValue::deserialize(const char *buf) {
     buf += name.deserialize(buf);	
     valuetypeid = GET_INT32(buf); buf+=4;
     
-    DataTypeDef& def = psf->types->get_typedef(valuetypeid);
+    const DataTypeDef& def = psf->types->get_typedef(valuetypeid);
     value = def.new_scalar();
     
     buf += def.deserialize_data(value->ptr(), buf);
@@ -44,6 +54,7 @@ int NonSweepValue::deserialize(const char *buf) {
 	if(Property::ischunk(chunktype)) {
 	    Property prop;
 	    buf += prop.deserialize(buf);
+
 	    properties.push_back(prop);
 	} else
 	    break;

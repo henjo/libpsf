@@ -2,7 +2,7 @@
 #include "psfdata.h"
 #include "psfinternal.h"
 
-Chunk * StructDef::child_factory(int chunktype) {
+Chunk * StructDef::child_factory(int chunktype) const {
     if(DataTypeDef::ischunk(chunktype))
 	return new DataTypeDef();
     else if(chunktype == 18)
@@ -27,7 +27,7 @@ int StructDef::deserialize(const char *buf) {
     return buf - startbuf;
 }
 
-Struct * StructDef::get_data_object() {
+void* StructDef::new_dataobject() const {
     return new Struct(this);
 }
 

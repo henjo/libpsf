@@ -13,7 +13,7 @@ void noisesummary() {
     double sum=0;
     for(std::vector<std::string>::iterator i=names.begin(); i != names.end(); i++) {
 	if(*i != std::string("out")) {
-	    StructVector *valvec = dynamic_cast<StructVector *>(psfnoise.get_signal_values(*i));
+	    StructVector *valvec = dynamic_cast<StructVector *>(psfnoise.get_signal_vector(*i));
 	    Struct& data = (*valvec)[3];
 	    if(data.find(std::string("total")) != data.end())
 		sum += (double)*data[std::string("total")];
@@ -33,6 +33,8 @@ int main() {
     PSFDataSet pssop(dcopfile);
 
     noisesummary();
+
+    pssop.get_signal_properties("XIRXRFMIXTRIM0.XRDAC4.XR.R1");
     
     // std::cout << "Header properties:" << std::endl;
     // PropertyMap headerprops(psfnoise.get_header_properties());
@@ -54,6 +56,6 @@ int main() {
 
     // std::cout << "len=" << parvec->size() << std::endl;
 
-    //PSFDataVector *valvec = psf.get_signal_values("tx_lopath_hb_stop.tx_lopath_hb_top.tx_lopath_hb_driver.driver_hb_channel_q.Ismall.Idriver_n.nout_off.imod");
+    //PSFDataVector *valvec = psf.get_signal_vector("tx_lopath_hb_stop.tx_lopath_hb_top.tx_lopath_hb_driver.driver_hb_channel_q.Ismall.Idriver_n.nout_off.imod");
 
 }

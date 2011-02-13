@@ -8,9 +8,10 @@ Property::~Property() {
 }
 
 Property::Property(Property const &x) {
-    if(x.value)
+    if(x.value) {
+	name = x.name;
 	value = x.value->clone();
-    else
+    } else
 	value = NULL;
 }
 

@@ -12,22 +12,31 @@ PSFDataSet::~PSFDataSet() {
     delete psf;
 }
 
-std::vector<std::string> PSFDataSet::get_signal_names() {
+const std::vector<std::string> PSFDataSet::get_signal_names() const {
     return psf->get_names();
 }
 
-PSFVector *PSFDataSet::get_param_values() {	
+int PSFDataSet::get_sweep_npoints() const {
+    return (int) *psf->header->get_property("PSF sweep points");
+}
+
+PSFVector *PSFDataSet::get_sweep_values() const {	
     return psf->get_param_values();
 }
 
-PSFVector *PSFDataSet::get_signal_values(std::string name) {	
+PSFVector *PSFDataSet::get_signal_vector(std::string name) const {	
     return psf->get_values(name);
 }
 
-PSFScalar *PSFDataSet::get_signal_value(std::string name) {	
+const PSFScalar *PSFDataSet::get_signal_scalar(std::string name) const {	
     return psf->get_value(name);
 }
 
-const std::map<std::string, PSFScalar *> PSFDataSet::get_header_properties() {
+PropertyMap PSFDataSet::get_signal_properties(std::string name) const {
+    return psf->get_value_properties(name);
+}
+
+const PropertyMap& PSFDataSet::get_header_properties() const {
     return psf->header->get_header_properties();
 }
+

@@ -17,7 +17,7 @@ void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {
     int valueoffset = 0;
 
     for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
-	if(DataTypeRef *ref = dynamic_cast<DataTypeRef *>(*trace)) {
+	if(const DataTypeRef *ref = dynamic_cast<const DataTypeRef *>(*trace)) {
 	    int child_datasize = ref->get_datatype().datasize();
 
 	    _valuesize += child_datasize;
@@ -28,7 +28,7 @@ void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {
     }
 }
 
-SweepValue* ValueSectionSweep::get_values(ChildList &filter) {
+SweepValue* ValueSectionSweep::get_values(ChildList &filter) const {
     const char *buf = valuebuf;
 
     SweepValue *value = new_value();
@@ -41,10 +41,10 @@ SweepValue* ValueSectionSweep::get_values(ChildList &filter) {
     return value;
 }
 
-PSFVector* ValueSectionSweep::get_values(std::string name) {
+PSFVector* ValueSectionSweep::get_values(std::string name) const {
     // Create filter for retrieving the trace with correct name
     ChildList filter;
-    Chunk &trace = psf->traces->get_trace_by_name(name);
+    const Chunk &trace = psf->traces->get_trace_by_name(name);
     filter.push_back(&trace);
     
     SweepValue *v = get_values(filter);
@@ -60,7 +60,7 @@ PSFVector* ValueSectionSweep::get_values(std::string name) {
 }
 
 
-PSFVector* ValueSectionSweep::get_param_values() {
+PSFVector* ValueSectionSweep::get_param_values() const {
     ChildList filter;
     SweepValue *v = get_values(filter);
     return v->get_param_values();
@@ -90,8 +90,8 @@ int ValueSectionSweep::deserialize(const char *buf, int abspos) {
 };
 
 
-int ValueSectionSweep::valueoffset(int id) {
-    return valueoffsetmap[id];
+int ValueSectionSweep::valueoffset(int id) const {
+    return valueoffsetmap.find(id)->second;
 }
     
 const ValueSectionSweep::iterator ValueSectionSweep::begin(SweepValue *value, ChildList &filter) const {
@@ -102,7 +102,7 @@ const ValueSectionSweep::iterator ValueSectionSweep::end() const {
     return iterator(NULL, endbuf-4, NULL, NULL);
 }    
 
-SweepValue * ValueSectionSweep::new_value() {
+SweepValue * ValueSectionSweep::new_value() const {
     if(windowedsweep)
 	return new SweepValueWindowed();
     else
@@ -135,7 +135,7 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
     // Create group and copy pointers to data vectors from group to self
     int k = 0;
     for(TraceSection::const_iterator j=psf->traces->begin(); j != psf->traces->end(); j++) {
-	GroupDef *groupdef = dynamic_cast<GroupDef *>(*j);
+	const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*j);
 
 	resize(size() + groupdef->size());
     

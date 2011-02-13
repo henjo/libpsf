@@ -7,6 +7,7 @@
 #include <map>
 #include <tr1/unordered_map>
 #include <vector>
+#include <sstream>
 
 //
 // Prototypes
@@ -39,28 +40,28 @@ typedef std::string PSFString;
 //
 class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
  private:
-    StructDef *structdef;
+    const StructDef *structdef;
  public:
     Struct() : structdef(NULL) {}
-    Struct(StructDef *_structdef) { structdef = _structdef; }
+    Struct(const StructDef *_structdef) { structdef = _structdef; }
     ~Struct();
 
     int datasize() const;
 
     int deserialize(const char *buf);
 
-    friend std::ostream &operator<<(std::ostream &stream, Struct &o);
+    friend std::ostream &operator<<(std::ostream &stream, const Struct &o);
 };
 
 class Group: public std::vector<PSFVector *> {
  private:
-    GroupDef *groupdef;
+    const GroupDef *groupdef;
     std::vector<int> *filter;
  public:
-    Group(GroupDef *groupdef, std::vector<int> *filter=NULL);
+    Group(const GroupDef *groupdef, std::vector<int> *filter=NULL);
     ~Group();
     
-    void print(std::ostream &stream) {
+    void print(std::ostream &stream) const {
 	stream << groupdef;
     };
     int datasize() const { return 0; }
@@ -72,22 +73,23 @@ class Group: public std::vector<PSFVector *> {
 //
 class PSFScalar {
  private:
-    virtual void print(std::ostream &stream)=0;
+    virtual void print(std::ostream &stream) const = 0;
  public:
     virtual ~PSFScalar() {};
     virtual int deserialize(const char *buf) { return 0; };
 
     virtual operator int() const { return -1; }
     virtual operator double() const { return 0.0; }
-    friend std::ostream &operator<<(std::ostream &stream, PSFScalar &o);
-    virtual void *ptr()=0;
-    virtual PSFScalar *clone()=0;
+    virtual std::string tostring() const = 0;
+    friend std::ostream &operator<<(std::ostream &stream, const PSFScalar &o);
+    virtual void *ptr() = 0;
+    virtual PSFScalar *clone() const = 0;
 };
 
 template<class T> 
 class PSFScalarT : public PSFScalar {
  private:
-    virtual void print(std::ostream &stream) { stream << value; }
+    virtual void print(std::ostream &stream) const { stream << value; }
  public:
     T value;
 
@@ -96,9 +98,16 @@ class PSFScalarT : public PSFScalar {
 
     operator double() const;
     operator int() const;
+
+    std::string tostring() const {
+	std::stringstream out;
+	out << value;
+	return out.str();
+    }
+
     int deserialize(const char *buf);
     void *ptr() { return &value; }
-    PSFScalar* clone() { return new PSFScalarT(*this); }
+    PSFScalar* clone() const { return new PSFScalarT(*this); }
 };
 
 typedef PSFScalarT<PSFDouble> PSFDoubleScalar;
@@ -116,7 +125,7 @@ class PSFVector {
     virtual ~PSFVector() {};
     int type_id;
 
-    virtual std::size_t size()=0;
+    virtual std::size_t size() const = 0;
     
     virtual void resize(std::size_t n)=0;
     
@@ -124,7 +133,7 @@ class PSFVector {
     
     virtual void extend(const PSFVector *) {};
 
-    virtual void *ptr_at(int i)=0;
+    virtual void *ptr_at(int i) = 0;
 };
 
 template<class T>
@@ -142,7 +151,7 @@ class PSFVectorT : public PSFVector, public std::vector<T> {
     
     void *ptr_at(int i) { return &std::vector<T>::at(i); }
 
-    std::size_t size() { return std::vector<T>::size(); };
+    std::size_t size() const { return std::vector<T>::size(); };
     void resize(std::size_t n) { std::vector<T>::resize(n, init); };
 };
 

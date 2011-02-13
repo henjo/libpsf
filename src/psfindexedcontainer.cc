@@ -75,25 +75,25 @@ int IndexedContainer::deserialize(const char *buf, int abspos) {
 
     for(Container::const_iterator child=begin(); child != end(); child++) {
 	idmap[(*child)->get_id()] = *child;
-	std::string &name = (*child)->get_name();
+	const std::string &name = (*child)->get_name();
 	namemap[name] = *child;
     }
 
     return endpos - abspos;
 }	
 
-void IndexedContainer::print(std::ostream &stream) {
+void IndexedContainer::print(std::ostream &stream) const {
     stream << "IndexedContainer(";
     for(Container::const_iterator child=begin(); child !=end(); child++) 
 	stream << **child << " " ;
     stream << ")";	
 }
 
-Chunk & IndexedContainer::get_child(int id) {
-    return *idmap[id];
+const Chunk & IndexedContainer::get_child(int id) const {
+    return *idmap.find(id)->second;
 }
 
-Chunk & IndexedContainer::get_child(std::string name) {
-    return *namemap[name];
+const Chunk & IndexedContainer::get_child(std::string name) const {
+    return *namemap.find(name)->second;
 }
 

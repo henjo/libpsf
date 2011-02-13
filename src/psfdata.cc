@@ -11,7 +11,7 @@
 #include "psfinternal.h"
 
 
-std::ostream &operator<<(std::ostream &stream, PSFScalar &o)
+std::ostream &operator<<(std::ostream &stream, const PSFScalar &o)
 {
     o.print(stream);
     return stream; // must return stream
@@ -138,9 +138,9 @@ template<>
 PSFComplexDoubleVector::PSFVectorT() { init = PSFComplexDouble(0,0); }
 
 
-std::ostream &operator<<(std::ostream &stream, Struct &o) {
+std::ostream &operator<<(std::ostream &stream, const Struct &o) {
     stream << "Struct(";
-    for(Struct::iterator i=o.begin(); i != o.end(); i++)
+    for(Struct::const_iterator i=o.begin(); i != o.end(); i++)
 	stream << "(" << i->first << "," << *(i->second) << ")";
     stream << ")";
 }

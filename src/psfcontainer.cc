@@ -27,20 +27,20 @@ Chunk * Container::deserialize_child(const char **buf) {
     return child;
 }
 
-Chunk & Container::get_child(int id) {
+const Chunk & Container::get_child(int id) const {
     for(const_iterator child=begin(); child != end(); child++) {
 	if(id == (*child)->get_id())
 	    return **child;
     }	
 }
-Chunk & Container::get_child(std::string name) {
+const Chunk & Container::get_child(std::string name) const {
     for(const_iterator child=begin(); child != end(); child++) {
 	if(name == (*child)->get_name())
 	    return **child;
     }	
 }
 
-NameList Container::get_names() {
+NameList Container::get_names() const {
     NameList result;
 
     for(const_iterator i=begin(); i != end(); i++)
@@ -73,7 +73,7 @@ int SimpleContainer::deserialize(const char *buf, int abspos) {
     return buf - startbuf;
 }
 
-void SimpleContainer::print(std::ostream &stream) {
+void SimpleContainer::print(std::ostream &stream) const {
     stream << "SimpleContainer(";
     for(Container::const_iterator child=begin(); child !=end(); child++) 
 	stream << **child << " " ;

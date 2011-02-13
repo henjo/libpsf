@@ -23,18 +23,18 @@ int GroupDef::deserialize(const char *buf) {
     return buf - startbuf;
 }
     
-Chunk* GroupDef::child_factory(int chunktype) {
+Chunk* GroupDef::child_factory(int chunktype) const {
     if(DataTypeRef::ischunk(chunktype))
 	return new DataTypeRef(psf);
     else
 	throw IncorrectChunk(chunktype);
 }	
 
-void* GroupDef::new_dataobject() {
+void* GroupDef::new_dataobject() const {
     return new Group(this);
 }
 
-Group* GroupDef::new_group(std::vector<int> *filter) {
+Group* GroupDef::new_group(std::vector<int> *filter) const {
     return new Group(this, filter);
 }
 
@@ -45,21 +45,21 @@ void GroupDef::_create_valueoffsetmap() {
 }
 
 
-Group::Group(GroupDef *_groupdef, std::vector<int> *_filter) : groupdef(_groupdef), filter(_filter) {
+Group::Group(const GroupDef *_groupdef, std::vector<int> *_filter) : groupdef(_groupdef), filter(_filter) {
     if(filter) {
 	resize(filter->size());	
 	
 	int i=0;
 	for(std::vector<int>::iterator itypeid=filter->begin(); itypeid != filter->end(); itypeid++, i++) {
-	    DataTypeRef &typeref = dynamic_cast<DataTypeRef &>(groupdef->get_child(*itypeid));
+	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(groupdef->get_child(*itypeid));
 	    at(i) = typeref.new_vector();
 	}
     } else {
 	resize(groupdef->size());
 
 	int i = 0;
-	for(GroupDef::iterator element=groupdef->begin(); element != groupdef->end(); element++, i++) {
-	    DataTypeRef *typeref = dynamic_cast<DataTypeRef *>(*element);
+	for(GroupDef::const_iterator element=groupdef->begin(); element != groupdef->end(); element++, i++) {
+	    const DataTypeRef *typeref = dynamic_cast<const DataTypeRef *>(*element);
 	    PSFVector *vec = typeref->new_vector();
 	    at(i) = vec;
 	}
@@ -77,27 +77,27 @@ int Group::deserialize(const char *buf, int n, int windowsize) {
     if(filter) {
 	int i=0;
 	for(std::vector<int>::iterator itypeid=filter->begin(); itypeid != filter->end(); itypeid++, i++) { 
-	    DataTypeRef &typeref = dynamic_cast<DataTypeRef &>(groupdef->get_child(*itypeid));
-	    DataTypeDef &type_def = typeref.get_datatype();
+	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(groupdef->get_child(*itypeid));
+	    const DataTypeDef &type_def = typeref.get_datatype();
 	    PSFVector *vec = at(i);
 
 	    int offset = vec->size();
 	    vec->resize(offset + n);
 	    
 	    for(int j=0; j < n; j++) {
-		buf = startbuf +  groupdef->indexmap[*itypeid] * windowsize + 
+		buf = startbuf +  groupdef->indexmap.find(*itypeid)->second * windowsize + 
 		    (windowsize - n * type_def.datasize());
 		type_def.deserialize_data(vec->ptr_at(offset+j), buf);
 	    }
 	}
     } else {
 	int i = 0;
-	for(GroupDef::iterator element=groupdef->begin(); element != groupdef->end(); element++, i++) {
-	    DataTypeRef *typeref = dynamic_cast<DataTypeRef *>(*element);
-	    DataTypeDef &type_def = typeref->get_datatype();
+	for(GroupDef::const_iterator element=groupdef->begin(); element != groupdef->end(); element++, i++) {
+	    const DataTypeRef *typeref = dynamic_cast<const DataTypeRef *>(*element);
+	    const DataTypeDef &type_def = typeref->get_datatype();
 	    PSFVector *vec = at(i);
 	    for(int j=0; j < n; j++) {
-		buf = startbuf +  groupdef->indexmap[(*element)->get_id()] * windowsize + 
+		buf = startbuf +  groupdef->indexmap.find((*element)->get_id())->second * windowsize + 
 		    (windowsize - n * type_def.datasize());
 		type_def.deserialize_data(vec->ptr_at(j), buf);
 	    }

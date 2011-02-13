@@ -11,7 +11,7 @@ int Chunk::deserialize(const char *buf) {
     return 4;
 }
 
-std::ostream &operator<<(std::ostream &stream, Chunk &o)
+std::ostream &operator<<(std::ostream &stream, const Chunk &o)
 {
     o.print(stream);
     return stream; // must return stream

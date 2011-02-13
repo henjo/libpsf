@@ -35,7 +35,7 @@ class FileOpenError: public std::exception {};
 
 #include "psfdata.h"
 
-typedef std::map<std::string, PSFScalar *> PropertyMap;
+typedef std::map<std::string, const PSFScalar *> PropertyMap;
 
 class PSFDataSet {
  private:
@@ -45,12 +45,14 @@ class PSFDataSet {
     PSFDataSet(std::string filename);
     ~PSFDataSet();
 
-    const PropertyMap get_header_properties();
+    const PropertyMap& get_header_properties() const;
 
-    std::vector<std::string> get_signal_names();
-    PSFVector *get_param_values();
-    PSFVector *get_signal_values(std::string name);
-    PSFScalar *get_signal_value(std::string name);
+    const std::vector<std::string> get_signal_names() const;
+    int get_sweep_npoints() const;
+    PSFVector *get_sweep_values() const;
+    PropertyMap get_signal_properties(std::string name) const;
+    PSFVector *get_signal_vector(std::string name) const ;
+    const PSFScalar *get_signal_scalar(std::string name) const;
 };
 
 #endif
