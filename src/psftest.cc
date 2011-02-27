@@ -27,19 +27,21 @@ int main() {
     std::string dcopfile("../examples/data/opBegin");
     std::string pssfdfile("../examples/data/pss0.fd.pss");
     std::string tranfile("../examples/data/timeSweep");
+    std::string srcsweepfile("../examples/data/srcSweep");
 
-    PSFDataSet psftran(tranfile);
-    PSFDataSet pssfd(pssfdfile);
-    PSFDataSet pssop(dcopfile);
+    //    PSFDataSet psftran(tranfile);
+    //    PSFDataSet pssfd(pssfdfile);
+    //    PSFDataSet pssop(dcopfile);
+    PSFDataSet srcsweep(srcsweepfile);
 
     noisesummary();
 
-    pssop.get_signal_properties("XIRXRFMIXTRIM0.XRDAC4.XR.R1");
+    //pssop.get_signal_properties("XIRXRFMIXTRIM0.XRDAC4.XR.R1");
     
-    // std::cout << "Header properties:" << std::endl;
-    // PropertyMap headerprops(psfnoise.get_header_properties());
-    // for(PropertyMap::iterator i=headerprops.begin(); i!=headerprops.end(); i++) 
-    // 	std::cout << i->first << ":" << *i->second << std::endl;    
+    std::cout << "Header properties:" << std::endl;
+    PropertyMap headerprops(srcsweep.get_header_properties());
+    for(PropertyMap::iterator i=headerprops.begin(); i!=headerprops.end(); i++) 
+     	std::cout << i->first << ":" << *i->second << std::endl;    
 
     // {
     // 	Float64Vector *parvec = (Float64Vector *)psfnoise.get_param_values();

@@ -28,7 +28,7 @@
 #define CHUNKID_VALUESECTIONEND 15
 
 #define GET_INT32(buf) ntohl(*((uint32_t *)(buf)))
-#define GET_DOUBLE(dest, buf) *((uint64_t *)&(dest)) = be64toh(*((uint64_t *)buf))
+#define GET_DOUBLE(dest, buf) *((uint64_t *)&(dest)) = be64toh(*((uint64_t *)(buf)))
 #define READ_INT32(var, fstr) fstr.read((char *)&var, 4); var = ntohl(var)
 
 typedef struct {
@@ -55,8 +55,11 @@ class SweepValueSimple;
 typedef std::vector<const Chunk *> ChildList;
 typedef std::vector<Property> PropertyList;
 typedef std::tr1::unordered_map<int,int> TraceIDOffsetMap;
-typedef std::vector<int> TraceIDList;
+typedef std::vector<int> OffsetList;
+typedef std::vector<int> TraceIdx;
+typedef std::vector<const Chunk *> Filter;
 typedef std::vector<std::string> NameList;
+typedef std::tr1::unordered_map<std::string, int> NameIndexMap;
 typedef std::vector<SweepValue> SweepValueList;
 typedef std::map<std::string, const PSFScalar *> PropertyMap;
 
@@ -184,12 +187,13 @@ class TraceIndex: public Chunk {
 class IndexedContainer: public Container {
  private:
     std::tr1::unordered_map<int, const Chunk *> idmap;
-    std::tr1::unordered_map<std::string, const Chunk *> namemap;
+    NameIndexMap namemap;
  public:	
     virtual int deserialize(const char *buf, int abspos);
 
     virtual const Chunk & get_child(int id) const;
     virtual const Chunk & get_child(std::string name) const;
+    virtual int get_child_index(std::string name) const;
 
     virtual void print(std::ostream &stream) const;
 };
@@ -249,7 +253,9 @@ private:
     virtual int deserialize(const char *buf);
 
     TraceIDOffsetMap indexmap;
-    void _create_valueoffsetmap();
+    std::tr1::unordered_map<std::string, int> namemap;
+    
+    void _create_valueindexmap();
 
 public:
     static const int type = 17;
@@ -258,14 +264,20 @@ public:
 
     const std::string& get_name() const { return name.value; }
 
-    void *new_dataobject() const;
-    Group *new_group(std::vector<int> *filter) const;
+    virtual const Chunk & get_child(int id) const { return Container::get_child(id); }
+    virtual const Chunk & get_child(std::string name) const;
+    virtual int get_child_index(std::string name) const;
 
+    //    void *new_dataobject() const;
+    //    Group *new_group(std::vector<int> *filter) const;
+
+    int fill_offsetmap(TraceIDOffsetMap& map, int windowsize=0, int startoffset=0) const;
+    
     static bool ischunk(int chunktype) {
 	return chunktype == GroupDef::type;
     };
     
-    friend class Group;
+    //    friend class Group;
 };
 
 class DataTypeRef: public Container {
@@ -380,8 +392,9 @@ public:
 
     NameList get_names() const;
 
+    const DataTypeRef& get_trace_by_index(const TraceIdx &) const;
     const DataTypeRef& get_trace_by_name(std::string name) const;
-
+    const TraceIdx get_traceindex_by_name(std::string name) const;
 };
 
 class ZeroPad: public Chunk {
@@ -464,17 +477,17 @@ public:
     const std::string& get_name() const { return name.value; }
 
     PSFVector *get_param_values() const { return paramvalues; }
-    virtual int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter) {};
+    virtual int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, Filter &filter) {};
 };
 
 class SweepValueSimple: public SweepValue {
  public:
-    int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter);
+    int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, Filter &filter);
 };
 
 class SweepValueWindowed: public SweepValue {
  public:
-    int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter);
+    int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, Filter &filter);
 };    
 
 template <class T>
@@ -526,7 +539,7 @@ private:
     PSFFile *psf;
 
     int _valuesize;
-    TraceIDOffsetMap valueoffsetmap;
+    TraceIDOffsetMap offsetmap;
     void _create_valueoffsetmap(bool windowedsweep);
     
     const char *valuebuf, *endbuf;
@@ -543,7 +556,7 @@ public:
     // Allocate a value of correct class
     SweepValue *new_value() const;
 
-    SweepValue *get_values(ChildList &filter) const;
+    SweepValue *get_values(Filter &filter) const;
     PSFVector* get_values(std::string name) const;
     PSFVector* get_param_values() const;
 

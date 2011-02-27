@@ -14,21 +14,39 @@ ValueSectionSweep::ValueSectionSweep(PSFFile *_psf) : psf(_psf) {
 
 void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {    
     _valuesize = 0;
-    int valueoffset = 0;
 
-    for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
-	if(const DataTypeRef *ref = dynamic_cast<const DataTypeRef *>(*trace)) {
-	    int child_datasize = ref->get_datatype().datasize();
+    int valueoffset = 0;
+    int child_datasize;
+
+    if (windowedsweep) {
+	int windowsize = *psf->header->get_property("PSF window size");
+	
+	for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
+	    if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*trace)) 
+		child_datasize = groupdef->fill_offsetmap(offsetmap, windowsize, valueoffset);
+	    else
+		throw IncorrectChunk((*trace)->chunktype);
 
 	    _valuesize += child_datasize;
+	    valueoffset += child_datasize;
+	}
+    } else {
+	for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
+	    if(const DataTypeRef *ref = dynamic_cast<const DataTypeRef *>(*trace)) {
+		child_datasize = ref->get_datatype().datasize();
+		offsetmap[ref->get_id()] = valueoffset + 8;
+	    } else if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*trace))
+		child_datasize = groupdef->fill_offsetmap(offsetmap, 0, valueoffset + 8);
+	    else 
+		throw IncorrectChunk((*trace)->chunktype);
 
-	    valueoffsetmap[(*trace)->get_id()] = valueoffset;
+	    _valuesize += child_datasize;
 	    valueoffset += 8 + child_datasize;
 	}
     }
 }
 
-SweepValue* ValueSectionSweep::get_values(ChildList &filter) const {
+SweepValue* ValueSectionSweep::get_values(Filter &filter) const {
     const char *buf = valuebuf;
 
     SweepValue *value = new_value();
@@ -43,9 +61,8 @@ SweepValue* ValueSectionSweep::get_values(ChildList &filter) const {
 
 PSFVector* ValueSectionSweep::get_values(std::string name) const {
     // Create filter for retrieving the trace with correct name
-    ChildList filter;
-    const Chunk &trace = psf->traces->get_trace_by_name(name);
-    filter.push_back(&trace);
+    Filter filter;
+    filter.push_back(&psf->traces->get_trace_by_name(name));
     
     SweepValue *v = get_values(filter);
     
@@ -61,7 +78,7 @@ PSFVector* ValueSectionSweep::get_values(std::string name) const {
 
 
 PSFVector* ValueSectionSweep::get_param_values() const {
-    ChildList filter;
+    Filter filter;
     SweepValue *v = get_values(filter);
     return v->get_param_values();
 }
@@ -91,7 +108,7 @@ int ValueSectionSweep::deserialize(const char *buf, int abspos) {
 
 
 int ValueSectionSweep::valueoffset(int id) const {
-    return valueoffsetmap.find(id)->second;
+    return offsetmap.find(id)->second;
 }
     
 const ValueSectionSweep::iterator ValueSectionSweep::begin(SweepValue *value, ChildList &filter) const {
@@ -121,39 +138,24 @@ SweepValue::~SweepValue() {
 }
 
 int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffset, PSFFile *psf, 
-				    ChildList &filter) {
+				    Filter &filter) {
     const char *startbuf = buf;
 
-    clear();
+    int windowsize = *psf->header->get_property("PSF window size");
 
-    std::vector<Group *> groups;
-
-    std::vector<int> filter2;
-    for(ChildList::iterator i=filter.begin(); i!=filter.end(); i++)
-	filter2.push_back((*i)->get_id());
-    
-    // Create group and copy pointers to data vectors from group to self
-    int k = 0;
-    for(TraceSection::const_iterator j=psf->traces->begin(); j != psf->traces->end(); j++) {
-	const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*j);
-
-	resize(size() + groupdef->size());
-    
-	Group *group = groupdef->new_group(&filter2);
-
-	groups.push_back(group);
-
-	for(Group::iterator ivec=group->begin(); ivec != group->end(); ivec++) {
-	    (*this)[k++] = *ivec;
-	}
-    }
-
-    // De-serialize all datapoints to data vectors that are stored in the single group
-    
+    // Create parameter vector
     DataTypeRef &paramtype = *((DataTypeRef *)(*psf->sweeps)[0]);
-
     if(paramvalues == NULL)
 	paramvalues = paramtype.new_vector();
+
+    // Create data vectors
+    clear();
+    for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++) {
+	DataTypeRef *trace = (DataTypeRef *) *j;
+	PSFVector *vec = trace->new_vector();
+	vec->resize(*totaln);
+	push_back(vec);
+    }
 
     for(int i=0; i < *totaln; ) {
 	buf += Chunk::deserialize(buf);
@@ -171,18 +173,26 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	    buf += paramtype.deserialize_data(paramvalues->ptr_at(pwinstart + j), buf);
 
 	const char *valuebuf = buf;
+	
+	const_iterator idatavec = begin();
 
-	int windowsize = *psf->header->get_property("PSF window size");
+	for(Filter::const_iterator j=filter.begin(); j != filter.end(); j++, idatavec++) {
+	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**j);
 
-	for(std::vector<Group *>::iterator igroup = groups.begin(); igroup != groups.end(); igroup++)
-	    buf += (*igroup)->deserialize(buf, n, windowsize);
+	    // calculate buffer pointer
+	    buf = valuebuf +  psf->sweepvalues->valueoffset((*j)->get_id()) +
+		(windowsize - n * typeref.datasize());
+	    
+	    for(int k=0; k < n; k++)
+		buf += typeref.deserialize_data((*idatavec)->ptr_at(i+k), buf);
+	}
 	
 	i += n;
     }
     return buf - startbuf;
 }
 
-int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, ChildList &filter) {
+int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, Filter &filter) {
     const char *startbuf = buf;
 
     // Create data vectors
@@ -217,23 +227,14 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	const char *valuebuf = buf;
 
 	int k=0;
-	for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++, k++) {
-	    DataTypeRef *trace = (DataTypeRef *) *j;
+	for(Filter::const_iterator j=filter.begin(); j != filter.end(); j++, k++) {
+	    const DataTypeRef *trace = dynamic_cast<const DataTypeRef *>(*j);
 
 	    buf = valuebuf + psf->sweepvalues->valueoffset(trace->get_id());
 
-	    // Uncertain what this is, the value is 16 or 17
-	    int tracetype = GET_INT32(buf);
-	
-	    int traceid = GET_INT32(buf+4);
-	
-	    buf += 8;
-	
-	    assert(trace->get_id() == traceid);
-
-	    buf += trace->deserialize_data(this->at(k)->ptr_at(i), buf);
+	    trace->deserialize_data(this->at(k)->ptr_at(i), buf);
 	}
-	buf = pointstartbuf + (valuebuf-pointstartbuf) + 8 * psf->traces->size() + psf->sweepvalues->valuesize();
+	buf = valuebuf + 8 * psf->traces->size() + psf->sweepvalues->valuesize();
     }
 
     return buf - startbuf;

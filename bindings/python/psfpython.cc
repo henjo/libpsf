@@ -8,7 +8,10 @@
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/python/manage_new_object.hpp>
 #include <boost/python/return_value_policy.hpp>
+#include <boost/python/exception_translator.hpp>
 #include <boost/python/dict.hpp>
+
+#include <sstream>
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
@@ -85,6 +88,15 @@ struct PSFVector_to_numpyarray {
     }
 };
     
+void translate_exception(IncorrectChunk const& e) {
+    std::stringstream msg; msg << "Incorrect chunk " << e.chunktype;
+    PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
+}
+
+void test_exception() {
+    throw(IncorrectChunk(1));
+}
+
 BOOST_PYTHON_MODULE(_psf)
 { 
     import_array();
@@ -92,8 +104,6 @@ BOOST_PYTHON_MODULE(_psf)
     to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
     to_python_converter<const PSFScalar *, PSFScalar_to_python>();
     to_python_converter<Struct, Struct_to_python>();
-
-    //    class_<PSFVector>("PSFVector");
 
     class_< std::vector<std::string> >("StringVec")
 	.def(vector_indexing_suite<std::vector<std::string> >())
@@ -113,4 +123,9 @@ BOOST_PYTHON_MODULE(_psf)
 	.def("get_signal_properties", &PSFDataSet::get_signal_properties,
 	     return_value_policy<return_by_value>())
     ;
+
+    def("test_exception", test_exception);
+
+    class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());
+    boost::python::register_exception_translator<IncorrectChunk>(&translate_exception);
 }

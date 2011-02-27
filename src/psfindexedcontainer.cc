@@ -70,13 +70,19 @@ int IndexedContainer::deserialize(const char *buf, int abspos) {
 	    break;
     }
 
-    Index index;
-    buf += index.deserialize(buf);
-
-    for(Container::const_iterator child=begin(); child != end(); child++) {
+    if(dynamic_cast<TraceSection *>(this)) {
+	TraceIndex index;	
+	buf += index.deserialize(buf);
+    } else {
+	Index index;
+	buf += index.deserialize(buf);
+    }
+    
+    i=0;
+    for(Container::const_iterator child=begin(); child != end(); child++, i++) {
 	idmap[(*child)->get_id()] = *child;
 	const std::string &name = (*child)->get_name();
-	namemap[name] = *child;
+	namemap[name] = i;
     }
 
     return endpos - abspos;
@@ -94,6 +100,21 @@ const Chunk & IndexedContainer::get_child(int id) const {
 }
 
 const Chunk & IndexedContainer::get_child(std::string name) const {
-    return *namemap.find(name)->second;
+    NameIndexMap::const_iterator i = namemap.find(name);
+
+    if(i == namemap.end())
+	throw NotFound();
+    else
+	return *at(i->second);
 }
+
+int IndexedContainer::get_child_index(std::string name) const {
+    NameIndexMap::const_iterator i = namemap.find(name);
+
+    if(i == namemap.end())
+	return -1;
+    else
+	return i->second;
+}
+
 

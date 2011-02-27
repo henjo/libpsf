@@ -53,20 +53,20 @@ class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
     friend std::ostream &operator<<(std::ostream &stream, const Struct &o);
 };
 
-class Group: public std::vector<PSFVector *> {
- private:
-    const GroupDef *groupdef;
-    std::vector<int> *filter;
- public:
-    Group(const GroupDef *groupdef, std::vector<int> *filter=NULL);
-    ~Group();
+/* class Group: public std::vector<PSFVector *> { */
+/*  private: */
+/*     const GroupDef *groupdef; */
+/*     std::vector<int> *filter; */
+/*  public: */
+/*     Group(const GroupDef *groupdef, std::vector<int> *filter=NULL); */
+/*     ~Group(); */
     
-    void print(std::ostream &stream) const {
-	stream << groupdef;
-    };
-    int datasize() const { return 0; }
-    int deserialize(const char *buf, int n, int windowsize);
-};
+/*     void print(std::ostream &stream) const { */
+/* 	stream << groupdef; */
+/*     }; */
+/*     int datasize() const { return 0; } */
+/*     int deserialize(const char *buf, int n, int windowsize); */
+/* }; */
 
 //
 // Scalar data

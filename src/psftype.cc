@@ -75,9 +75,9 @@ int DataTypeDef::deserialize_data(void *data, const char *buf) const {
 	return 8;
     case TYPEID_COMPLEXDOUBLE:
 	double re, im;
-	GET_DOUBLE(re, buf); GET_DOUBLE(im, buf + sizeof(PSFDouble)); 
+	GET_DOUBLE(re, buf); GET_DOUBLE(im, buf + 8); 
 	*(PSFComplexDouble *)data = PSFComplexDouble(re, im);
-	return 8;
+	return 16;
     case TYPEID_STRUCT: 
 	return ((Struct *)data)->deserialize(buf);
     default:

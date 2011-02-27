@@ -16,9 +16,10 @@ int GroupDef::deserialize(const char *buf) {
     for(int i=0; i < nchildren; i++) {
 	Chunk *chunk = deserialize_child(&buf);  
 	add_child(chunk);
+	namemap[chunk->get_name()] = i;
     }
 
-    _create_valueoffsetmap();
+    _create_valueindexmap();
     
     return buf - startbuf;
 }
@@ -30,6 +31,7 @@ Chunk* GroupDef::child_factory(int chunktype) const {
 	throw IncorrectChunk(chunktype);
 }	
 
+/*
 void* GroupDef::new_dataobject() const {
     return new Group(this);
 }
@@ -37,14 +39,38 @@ void* GroupDef::new_dataobject() const {
 Group* GroupDef::new_group(std::vector<int> *filter) const {
     return new Group(this, filter);
 }
+*/
 
-void GroupDef::_create_valueoffsetmap() {   
+int GroupDef::fill_offsetmap(TraceIDOffsetMap& offsetmap, int windowsize, int startoffset) const {   
+    int offset = startoffset;
+
+    for(const_iterator iref=begin(); iref != end(); iref++) {
+	offsetmap[(*iref)->get_id()] = offset;
+	if(windowsize) 
+	    offset += windowsize;
+	else {
+	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**iref);
+	    offset += typeref.datasize();
+	}
+    }
+    return offset - startoffset;
+}
+
+void GroupDef::_create_valueindexmap() {   
     int i=0;
     for(const_iterator iref=begin(); iref != end(); iref++, i++)
 	indexmap[(*iref)->get_id()] = i;
 }
 
+const Chunk & GroupDef::get_child(std::string name) const {
+    return *at(namemap.find(name)->second);
+}
 
+int GroupDef::get_child_index(std::string name) const {
+    return namemap.find(name)->second;
+}
+
+/*
 Group::Group(const GroupDef *_groupdef, std::vector<int> *_filter) : groupdef(_groupdef), filter(_filter) {
     if(filter) {
 	resize(filter->size());	
@@ -84,10 +110,10 @@ int Group::deserialize(const char *buf, int n, int windowsize) {
 	    int offset = vec->size();
 	    vec->resize(offset + n);
 	    
+	    buf = startbuf +  groupdef->indexmap.find(*itypeid)->second * windowsize + 
+		(windowsize - n * type_def.datasize());
 	    for(int j=0; j < n; j++) {
-		buf = startbuf +  groupdef->indexmap.find(*itypeid)->second * windowsize + 
-		    (windowsize - n * type_def.datasize());
-		type_def.deserialize_data(vec->ptr_at(offset+j), buf);
+		buf += type_def.deserialize_data(vec->ptr_at(offset+j), buf);
 	    }
 	}
     } else {
@@ -107,3 +133,4 @@ int Group::deserialize(const char *buf, int n, int windowsize) {
 	
     return groupdef->size() * windowsize;
 }
+*/
