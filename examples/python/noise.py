@@ -7,6 +7,6 @@ d = libpsf.PSFDataSet("/nfs/home/henrik/spectre/1/pnoise.raw/pnoise_pout3g.pnois
 stotal = 0
 for name in d.get_signal_names():
     if name != 'out':
-        stotal += d.get_signal_vector(name)[3]['total']
+        stotal += d.get_signal(name)[3]['total']
 
 print stotal

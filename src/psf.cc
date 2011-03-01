@@ -40,3 +40,7 @@ const PropertyMap& PSFDataSet::get_header_properties() const {
     return psf->header->get_header_properties();
 }
 
+bool PSFDataSet::is_swept() const {
+    int nsweeps = *(psf->header->get_header_properties().find("PSF sweeps")->second);
+    return (nsweeps > 0);
+}

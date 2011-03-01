@@ -93,8 +93,20 @@ void translate_exception(IncorrectChunk const& e) {
     PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
 }
 
+void translate_exception_notfound(NotFound const& e) {
+    std::stringstream msg; msg << "Signal not found";
+    PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
+}
+
 void test_exception() {
     throw(IncorrectChunk(1));
+}
+
+PyObject *get_signal(PSFDataSet *ds, std::string name) {
+    if (ds->is_swept()) 	
+	return PSFVector_to_numpyarray::convert(ds->get_signal_vector(name));
+    else
+	return PSFScalar_to_python::convert(ds->get_signal_scalar(name));
 }
 
 BOOST_PYTHON_MODULE(_psf)
@@ -114,18 +126,18 @@ BOOST_PYTHON_MODULE(_psf)
 	.def("get_signal_names", &PSFDataSet::get_signal_names)
 	.def("get_sweep_values", &PSFDataSet::get_sweep_values,
 	     return_value_policy<return_by_value>())
-	.def("get_signal_vector", &PSFDataSet::get_signal_vector,
-	     return_value_policy<return_by_value>())
-	.def("get_signal_scalar", &PSFDataSet::get_signal_scalar,
-	     return_value_policy<return_by_value>())
+	.def("get_signal", &get_signal, return_value_policy<return_by_value>())
 	.def("get_header_properties", &PSFDataSet::get_header_properties,
 	     return_value_policy<return_by_value>())
 	.def("get_signal_properties", &PSFDataSet::get_signal_properties,
 	     return_value_policy<return_by_value>())
+	.def("is_swept", &PSFDataSet::is_swept)
     ;
 
     def("test_exception", test_exception);
 
     class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());
+    //    class_<NotFound> incorrectChunkClass("NotFound", init<>());
     boost::python::register_exception_translator<IncorrectChunk>(&translate_exception);
+    boost::python::register_exception_translator<NotFound>(&translate_exception_notfound);
 }

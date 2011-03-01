@@ -63,11 +63,15 @@ void GroupDef::_create_valueindexmap() {
 }
 
 const Chunk & GroupDef::get_child(std::string name) const {
-    return *at(namemap.find(name)->second);
+    return *at(get_child_index(name));
 }
 
 int GroupDef::get_child_index(std::string name) const {
-    return namemap.find(name)->second;
+    NameIndexMap::const_iterator inameindex = namemap.find(name);
+    if (inameindex == namemap.end())
+	throw NotFound();
+    else
+	return inameindex->second;
 }
 
 /*
