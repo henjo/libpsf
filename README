@@ -1,3 +1,5 @@
+libpsf is a c++ library that reads Cadence PSF waveform files
+
 Install
 =======
 
