@@ -46,27 +46,21 @@ dnl Checks for boost python and numpy
 AM_PATH_PYTHON(2.5, have_python=true, have_python=false)
 
 dnl Check for numpy
-AC_PYTHON_MODULE(numpy, fatal)
+AC_MSG_CHECKING([for Numpy include directory])
 
 CPPFLAGS_SAVE=$CPPFLAGS
 if test x$PYTHON_INCLUDE_DIR != x; then
     CPPFLAGS=-I$PYTHON_INCLUDE_DIR $CPPFLAGS
 fi
-NUMPY_DIR="${PYTHON_SITE_PKG}/numpy"
-AC_ARG_WITH([numpy], [AS_HELP_STRING([--with-numpy=DIR],[directory where numpy is installed
-                      [default=${PYTHON_SITE_PKG}/numpy] ])],
-        NUMPY_DIR=$withval)
-[NUMPY_INCLUDE_DIR="${NUMPY_DIR}/core/include"]
+NUMPY_INCLUDE_DIR=`echo "import numpy; print numpy.get_include()" | $PYTHON - 2>/dev/null`
 AC_SUBST(NUMPY_INCLUDE_DIR)
-[NUMPY_DIR="${NUMPY_DIR}/core/include/numpy"]
-AC_CHECK_HEADER([${NUMPY_DIR}/arrayobject.h],
+AC_CHECK_HEADER([${NUMPY_INCLUDE_DIR}/numpy/arrayobject.h],
                 [NUMPY_HEADER=yes],
-                [AC_MSG_ERROR([Numpy extension header not found])],
+                [AC_MSG_WARN([Numpy extension header not found])],
                 [#include "Python.h"])
 AC_SUBST(NUMPY_HEADER)
 CPPFLAGS_SAVE=$CPPFLAGS
 
-#AM_CONDITIONAL(WITH_PYTHON, test ! -z "$BOOST_PYTHON_LIB" )
 AM_CONDITIONAL(WITH_PYTHONBINDINGS, test ! -z "$BOOST_PYTHON_LIB" -a "x$NUMPY_HEADER" == "xyes" )
 
 dnl Checks for library functions.
