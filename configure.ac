@@ -56,6 +56,8 @@ NUMPY_DIR="${PYTHON_SITE_PKG}/numpy"
 AC_ARG_WITH([numpy], [AS_HELP_STRING([--with-numpy=DIR],[directory where numpy is installed
                       [default=${PYTHON_SITE_PKG}/numpy] ])],
         NUMPY_DIR=$withval)
+[NUMPY_INCLUDE_DIR="${NUMPY_DIR}/core/include"]
+AC_SUBST(NUMPY_INCLUDE_DIR)
 [NUMPY_DIR="${NUMPY_DIR}/core/include/numpy"]
 AC_CHECK_HEADER([${NUMPY_DIR}/arrayobject.h],
                 [NUMPY_HEADER=yes],
