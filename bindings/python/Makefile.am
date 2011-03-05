@@ -13,7 +13,8 @@ _psf_la_LIBADD = \
 
 _psf_la_CXXFLAGS = \
 	-I../../include \
-	-I${PYTHON_INCLUDE_DIR}
+	-I${PYTHON_INCLUDE_DIR} \
+	-I${NUMPY_INCLUDE_DIR}
 
 _psf_la_LDFLAGS = \
 	-avoid-version -module \
