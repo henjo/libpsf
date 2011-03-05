@@ -1,0 +1,20 @@
+Install
+=======
+
+Install prerequisits
+--------------------
+
+On a debian based system you can run the following to install the 
+packages needed to build libpsf:
+
+sudo aptitude install autoconf automake libtool libboost-all-dev python-numpy-dev 
+
+Build and install
+-----------------
+
+./autogen.sh
+make
+sudo make install
+
+
+
