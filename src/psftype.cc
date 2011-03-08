@@ -87,6 +87,10 @@ int DataTypeDef::deserialize_data(void *data, const char *buf) const {
 
 PSFScalar *DataTypeDef::new_scalar() const {
     switch(datatypeid) {
+    case TYPEID_INT8:
+	return new PSFInt8Scalar();
+    case TYPEID_INT32:
+	return new PSFInt32Scalar();
     case TYPEID_DOUBLE:
 	return new PSFDoubleScalar();
     case TYPEID_COMPLEXDOUBLE:
@@ -100,6 +104,10 @@ PSFScalar *DataTypeDef::new_scalar() const {
 
 PSFVector *DataTypeDef::new_vector() const {
     switch(datatypeid) {
+    case TYPEID_INT8:
+	return new PSFInt8Vector();
+    case TYPEID_INT32:
+	return new PSFInt32Vector();
     case TYPEID_DOUBLE:
 	return new PSFDoubleVector();
     case TYPEID_COMPLEXDOUBLE:
