@@ -80,6 +80,9 @@ PSFVector* ValueSectionSweep::get_values(std::string name) const {
 PSFVector* ValueSectionSweep::get_param_values() const {
     Filter filter;
     SweepValue *v = get_values(filter);
+
+    //FIXME, v is not deallocated
+
     return v->get_param_values();
 }
 
