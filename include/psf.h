@@ -42,6 +42,7 @@ class PSFDataSet {
  private:
     PSFFile *psf;
     std::string filename;
+    bool invertstruct;
  public:
     PSFDataSet(std::string filename);
     ~PSFDataSet();
@@ -53,8 +54,12 @@ class PSFDataSet {
     int get_sweep_npoints() const;
     PSFVector *get_sweep_values() const;
     PropertyMap get_signal_properties(std::string name) const;
+    PSFBase *get_signal(std::string name) const;
     PSFVector *get_signal_vector(std::string name) const ;
     const PSFScalar *get_signal_scalar(std::string name) const;
+
+    void set_invertstruct(bool value) { invertstruct = value; }
+    bool get_invertstruct() { return invertstruct; }
 };
 
 #endif

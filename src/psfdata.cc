@@ -10,11 +10,85 @@
 #include "psf.h"
 #include "psfinternal.h"
 
+// Struct
+
+Struct::Struct(const Struct& s) {
+    structdef = s.structdef;
+    for(Struct::const_iterator i=s.begin(); i != s.end(); i++) {
+	Struct &me = *this;
+	me[i->first]  = i->second->clone();
+    }
+}
+
+Struct::~Struct() {
+    for(Struct::const_iterator i=begin(); i != end(); i++)
+	delete(i->second);
+}
+
+int Struct::deserialize(const char *buf) {
+    const char *startbuf = buf;
+
+    for(StructDef::const_iterator itemdef=structdef->begin(); 
+	itemdef != structdef->end(); itemdef++) {
+
+	PSFScalar *itemvalue = ((DataTypeDef *)(*itemdef))->new_scalar();
+
+	buf += itemvalue->deserialize(buf);
+	
+	Struct &me = *this;
+	std::string key((*itemdef)->get_name());
+	me[key] = itemvalue;
+    }
+    
+    return buf - startbuf;
+}
+
+int Struct::datasize() const {
+    return structdef->datasize(); 
+}
 
 std::ostream &operator<<(std::ostream &stream, const PSFScalar &o)
 {
     o.print(stream);
     return stream; // must return stream
+}
+
+// VectorStruct
+VectorStruct::VectorStruct(const StructDef *structdef) {
+    init_from_structdef(structdef);
+}
+
+VectorStruct::VectorStruct(const StructVector &structvec) {
+    init_from_structdef(structvec.get_initvalue().get_structdef());
+    copy_from_structvector(structvec);
+}
+
+void VectorStruct::init_from_structdef(const StructDef *structdef) {
+    for(StructDef::const_iterator itemdef=structdef->begin(); 
+	itemdef != structdef->end(); itemdef++) {
+
+	std::string key((*itemdef)->get_name());
+
+	(*this)[key] = ((DataTypeDef *)(*itemdef))->new_vector();
+    }
+}
+
+int VectorStruct::copy_from_structvector(const StructVector &structvec) {
+    // Iterate over struct keys
+    for(iterator i=begin(); i != end(); i++) {
+	i->second->resize(structvec.size());
+
+	StructVector::const_iterator j;
+	int jindex;
+
+	// Copy scalar values to vector
+	for(j=structvec.begin(), jindex=0; j != structvec.end(); j++, jindex++)
+	    i->second->assign_scalar(jindex, *j->find(i->first)->second);
+    }	
+
+    n = structvec.size();
+
+    return structvec.size();
 }
  
 // PSFInt8Scalar
@@ -25,6 +99,10 @@ int PSFInt8Scalar::deserialize(const char *buf) {
 }
 template<>
 PSFInt8Scalar::operator int() const {
+    return value;
+};
+template<>
+PSFInt8Scalar::operator double() const {
     return value;
 };
 
@@ -99,28 +177,6 @@ int StructScalar::deserialize(const char *buf) {
     return value.deserialize(buf);
 }
 
-// Struct
-Struct::~Struct() {
-    for(Struct::const_iterator i=begin(); i != end(); i++)
-	delete(i->second);
-}
-int Struct::deserialize(const char *buf) {
-    const char *startbuf = buf;
-
-    for(ChildList::const_iterator itemdef=structdef->begin(); 
-	itemdef != structdef->end(); itemdef++) {
-
-	PSFScalar *itemvalue = ((DataTypeDef *)(*itemdef))->new_scalar();
-
-	buf += itemvalue->deserialize(buf);
-	
-	Struct &me = *this;
-	std::string key((*itemdef)->get_name());
-	me[key] = itemvalue;
-    }
-    
-    return buf - startbuf;
-}
 template<>
 StructScalar::operator int() const {
     return -1;
@@ -145,10 +201,6 @@ std::ostream &operator<<(std::ostream &stream, const Struct &o) {
     stream << ")";
 }
 
-int Struct::datasize() const {
-    return structdef->datasize(); 
-}
-
 int psfdata_size(int datatypeid) {
     switch(datatypeid) {
     case TYPEID_INT8:
@@ -163,3 +215,4 @@ int psfdata_size(int datatypeid) {
 	throw UnknownType(datatypeid);    
     }
 }
+

@@ -97,11 +97,11 @@ void PSFFile::deserialize(const char *buf, int size) {
 void PSFFile::open() {
     fd = ::open(filename.c_str(), O_RDONLY);
 
-    off_t size = lseek(fd, 0, SEEK_END);
-    
     if (fd == -1)
 	throw FileOpenError();
 
+    off_t size = lseek(fd, 0, SEEK_END);
+    
     const char *buffer = (const char *)mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
 
     if(validate())

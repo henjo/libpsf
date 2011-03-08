@@ -44,14 +44,18 @@ class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
  public:
     Struct() : structdef(NULL) {}
     Struct(const StructDef *_structdef) { structdef = _structdef; }
+    Struct(const Struct&);
     ~Struct();
 
     int datasize() const;
 
     int deserialize(const char *buf);
 
+    const StructDef *get_structdef() const { return structdef; };
+
     friend std::ostream &operator<<(std::ostream &stream, const Struct &o);
 };
+
 
 /* class Group: public std::vector<PSFVector *> { */
 /*  private: */
@@ -68,10 +72,16 @@ class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
 /*     int deserialize(const char *buf, int n, int windowsize); */
 /* }; */
 
+// PSF base class
+class PSFBase {
+ public:
+    virtual ~PSFBase() { };
+};
+
 //
 // Scalar data
 //
-class PSFScalar {
+class PSFScalar : public PSFBase {
  private:
     virtual void print(std::ostream &stream) const = 0;
  public:
@@ -120,7 +130,7 @@ typedef PSFScalarT<Struct> StructScalar;
 //
 // Vector data
 //
-class PSFVector {
+class PSFVector : public PSFBase {
  public:
     virtual ~PSFVector() {};
     int type_id;
@@ -133,6 +143,8 @@ class PSFVector {
     
     virtual void extend(const PSFVector *) {};
 
+    virtual void assign_scalar(int, const PSFScalar &) {};
+
     virtual void *ptr_at(int i) = 0;
 };
 
@@ -141,7 +153,7 @@ class PSFVectorT : public PSFVector, public std::vector<T> {
  private:
     T init;
  public:
-    PSFVectorT();
+    PSFVectorT() {};
     PSFVectorT(const T& _init) : init(_init) {};
     void extend(const PSFVector *vec) {
 	const PSFVectorT& tvec = dynamic_cast<const PSFVectorT &>(*vec);
@@ -151,8 +163,14 @@ class PSFVectorT : public PSFVector, public std::vector<T> {
     
     void *ptr_at(int i) { return &std::vector<T>::at(i); }
 
+    void assign_scalar(int i, const PSFScalar &rhs) { 
+	(*this)[i] = dynamic_cast<const PSFScalarT<T> &>(rhs).value;
+    }
+
     std::size_t size() const { return std::vector<T>::size(); };
     void resize(std::size_t n) { std::vector<T>::resize(n, init); };
+
+    const T& get_initvalue() const { return init; }
 };
 
 typedef PSFVectorT<PSFDouble> PSFDoubleVector;
@@ -163,5 +181,19 @@ typedef PSFVectorT<PSFString> PSFStringVector;
 typedef PSFVectorT<Struct> StructVector;
 
 int psfdata_size(int type_id);
+
+class VectorStruct: public PSFBase, public std::tr1::unordered_map<std::string, PSFVector *> {
+ private:
+    int n;
+    void init_from_structdef(const StructDef *structdef);
+ public:
+    VectorStruct() : n(0) {}
+    VectorStruct(const StructDef *structdef); 
+    VectorStruct(const StructVector &);
+
+    int copy_from_structvector(const StructVector &);
+    
+    int vectorsize() const { return n; }
+};
 
 #endif

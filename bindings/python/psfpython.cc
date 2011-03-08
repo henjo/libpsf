@@ -22,19 +22,27 @@ struct Struct_to_python {
     static PyObject *convert(const Struct& s);
 };
 
+PyObject *psfscalar_to_python(const PSFScalar *scalar) {
+    PyObject *result = NULL;
+    if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar))
+	result = PyFloat_FromDouble(p->value);
+    else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar))
+	result = PyInt_FromLong((int)*p);
+    else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar))
+	result = PyString_FromString(p->tostring().c_str());
+    else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar))
+	result = Struct_to_python::convert(p->value);
+    else
+	throw NotImplemented();
+    
+    return result;
+}
+
 struct PSFScalar_to_python {
     static PyObject *convert(const PSFScalar *scalar) {
-	if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar)) {
-	    return PyFloat_FromDouble(p->value);
-	} else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar)) {
-	    return PyInt_FromLong((int)*p);
-	} else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar)) {
-	    return PyString_FromString(p->tostring().c_str());
-	} else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar)) {
-	    return Struct_to_python::convert(p->value);
-	} else {
-	    throw NotImplemented();
-	}
+	PyObject *result = psfscalar_to_python(scalar);
+	delete scalar;	
+	return result;
     }
 };
 
@@ -44,7 +52,7 @@ struct PropertyMap_to_python {
 
 	for(PropertyMap::const_iterator i = propmap.begin(); i != propmap.end(); i++)
 	    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
-			   PSFScalar_to_python::convert(i->second));	
+			   psfscalar_to_python(i->second));	
 	return dict;
     }
 };
@@ -52,44 +60,97 @@ struct PropertyMap_to_python {
 PyObject *Struct_to_python::convert(const Struct& s) {
     PyObject *dict = PyDict_New();
     
-    for(Struct::const_iterator i = s.begin(); i != s.end(); i++) 
+    for(Struct::const_iterator i = s.begin(); i != s.end(); i++) {
 	PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
-		       PSFScalar_to_python::convert(i->second));	
+		       psfscalar_to_python(i->second));
+    }	
     
     return dict;
 }
 
+PyObject *create_numpy_vector(int n, int type, void *data, bool copy) {
+    npy_intp dims[1] = { n };
+
+    if(copy) {
+	PyObject *result = PyArray_SimpleNew(1, dims, type);
+	void *arr_data = PyArray_DATA((PyArrayObject*)result);
+	memcpy(arr_data, data, PyArray_ITEMSIZE((PyArrayObject*) result) * n);
+	return result;
+    } else 
+	return PyArray_SimpleNewFromData(1, dims, type, data);
+}
+
+PyObject *psfvector_to_numpyarray(PSFVector *vec, bool copy=false) {
+    PyObject *result = NULL;
+
+    if (PSFDoubleVector *f64v = dynamic_cast<PSFDoubleVector *>(vec)) {
+	// Create numpy array
+	result = create_numpy_vector(f64v->size(), PyArray_DOUBLE, &f64v->at(0), copy);
+    } else if (PSFComplexDoubleVector *cf64v = 
+	       dynamic_cast<PSFComplexDoubleVector *>(vec)) {
+	// Create numpy array
+	result = create_numpy_vector(cf64v->size(), PyArray_CDOUBLE, &cf64v->at(0), copy);
+    } else if (StructVector *sv = dynamic_cast<StructVector *>(vec)) {
+	// Create numpy array
+	npy_intp dims[1] = { sv->size() };
+	result = PyArray_SimpleNew(1, dims, PyArray_OBJECT);
+	    
+	PyObject **ptr = (PyObject **) PyArray_DATA(result);
+	for(unsigned int i=0; i < sv->size(); i++)
+	    ptr[i] = Struct_to_python::convert(sv->at(i));
+
+	// Make source vector is deleted
+	copy = true;
+    }
+    if(copy)
+	delete vec;
+    
+    return result;
+}
+
+PyObject *vectorstruct_to_python(VectorStruct *vs) {
+    // Create dictionary of numpy arrays
+    PyObject *dict = PyDict_New();
+		
+    for(VectorStruct::const_iterator i = vs->begin(); i != vs->end(); i++)
+	PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+		       psfvector_to_numpyarray(i->second, true));	
+    return dict;
+}
 
 struct PSFVector_to_numpyarray {	
     static PyObject *convert(PSFVector *vec) {
-	if (PSFDoubleVector *f64v = dynamic_cast<PSFDoubleVector *>(vec)) {
-	    // Create numpy array
-	    npy_intp dims[1] = { f64v->size() };
-	    return PyArray_SimpleNewFromData(1, dims, PyArray_DOUBLE, &f64v->at(0));
-	} else if (PSFComplexDoubleVector *cf64v = 
-		   dynamic_cast<PSFComplexDoubleVector *>(vec)) {
-	    // Create numpy array
-	    npy_intp dims[1] = { cf64v->size() };
-	    return PyArray_SimpleNewFromData(1, dims, PyArray_CDOUBLE, &cf64v->at(0));
-	} else if (StructVector *sv = dynamic_cast<StructVector *>(vec)) {
-	    // Create numpy array
-	    npy_intp dims[1] = { sv->size() };
-	    PyObject *a = PyArray_SimpleNew(1, dims, PyArray_OBJECT);
-
-	    PyObject **ptr = (PyObject **) PyArray_DATA(a);	
-	    for(unsigned int i=0; i < sv->size(); i++)
-		ptr[i] = Struct_to_python::convert(sv->at(i));
-
-	    // Delete source vector
-	    delete(vec);
-	    return a;
-	} else
-	    return NULL;
+	return psfvector_to_numpyarray(vec);
     }
 };
-    
+
+struct PSFBase_to_numpyarray {	
+    static PyObject *convert(PSFBase *d) {
+	const PSFScalar *scalar = dynamic_cast<const PSFScalar *>(d);
+	if (scalar != NULL)
+	    return psfscalar_to_python(scalar);
+	else {	
+	    PSFVector *vector = dynamic_cast<PSFVector *>(d);
+	    if (vector != NULL)
+		return psfvector_to_numpyarray(vector, true);	
+	    else {
+		VectorStruct *vs = dynamic_cast<VectorStruct *>(d);
+
+		if(vs != NULL)
+		    return vectorstruct_to_python(vs);
+	    }
+	}
+    }
+};
+
+// Exception translators    
 void translate_exception(IncorrectChunk const& e) {
     std::stringstream msg; msg << "Incorrect chunk " << e.chunktype;
+    PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
+}
+
+void translate_exception_unknown_type(UnknownType const& e) {
+    std::stringstream msg; msg << "Unknown type " << e.type_id;
     PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
 }
 
@@ -98,21 +159,17 @@ void translate_exception_notfound(NotFound const& e) {
     PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
 }
 
-void test_exception() {
-    throw(IncorrectChunk(1));
+void translate_exception_fileopenerror(FileOpenError const& e) {
+    std::stringstream msg; msg << "File open error";
+    PyErr_SetString(PyExc_IOError, msg.str().c_str());
 }
 
-PyObject *get_signal(PSFDataSet *ds, std::string name) {
-    if (ds->is_swept()) 	
-	return PSFVector_to_numpyarray::convert(ds->get_signal_vector(name));
-    else
-	return PSFScalar_to_python::convert(ds->get_signal_scalar(name));
-}
 
 BOOST_PYTHON_MODULE(_psf)
 { 
     import_array();
     to_python_converter<PropertyMap, PropertyMap_to_python>();
+    to_python_converter<PSFBase *, PSFBase_to_numpyarray>();
     to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
     to_python_converter<const PSFScalar *, PSFScalar_to_python>();
     to_python_converter<Struct, Struct_to_python>();
@@ -126,18 +183,22 @@ BOOST_PYTHON_MODULE(_psf)
 	.def("get_signal_names", &PSFDataSet::get_signal_names)
 	.def("get_sweep_values", &PSFDataSet::get_sweep_values,
 	     return_value_policy<return_by_value>())
-	.def("get_signal", &get_signal, return_value_policy<return_by_value>())
+	.def("get_signal", &PSFDataSet::get_signal, 
+	     return_value_policy<return_by_value>())
 	.def("get_header_properties", &PSFDataSet::get_header_properties,
 	     return_value_policy<return_by_value>())
 	.def("get_signal_properties", &PSFDataSet::get_signal_properties,
 	     return_value_policy<return_by_value>())
 	.def("is_swept", &PSFDataSet::is_swept)
+	.add_property("invertstruct",
+		      &PSFDataSet::get_invertstruct,
+		      &PSFDataSet::set_invertstruct)
     ;
-
-    def("test_exception", test_exception);
 
     class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());
     //    class_<NotFound> incorrectChunkClass("NotFound", init<>());
     boost::python::register_exception_translator<IncorrectChunk>(&translate_exception);
     boost::python::register_exception_translator<NotFound>(&translate_exception_notfound);
+    boost::python::register_exception_translator<FileOpenError>(&translate_exception_fileopenerror);
+    boost::python::register_exception_translator<UnknownType>(&translate_exception_unknown_type);
 }

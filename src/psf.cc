@@ -2,7 +2,7 @@
 #include "psfinternal.h"
 #include "psfdata.h"
 
-PSFDataSet::PSFDataSet(std::string _filename) : filename(_filename) {
+PSFDataSet::PSFDataSet(std::string _filename) : filename(_filename), invertstruct(false) {
     psf = new PSFFile(filename.c_str());
     psf->open();
 }
@@ -22,6 +22,26 @@ int PSFDataSet::get_sweep_npoints() const {
 
 PSFVector *PSFDataSet::get_sweep_values() const {	
     return psf->get_param_values();
+}
+
+PSFBase* PSFDataSet::get_signal(std::string name) const {
+    if (is_swept()) {
+	PSFVector *vec = get_signal_vector(name);
+	
+	if(invertstruct && dynamic_cast<const StructVector *>(vec)) {
+	    VectorStruct *vs = new VectorStruct(*dynamic_cast<const StructVector *>(vec));
+
+	    delete vec;
+
+	    return vs;
+	} else
+	    return vec;
+    } else {
+	// Convert to const
+	const PSFScalar *const_scalar = psf->get_value(name);
+	PSFScalar *scalar = const_scalar->clone();
+	return scalar;
+    }
 }
 
 PSFVector *PSFDataSet::get_signal_vector(std::string name) const {	
