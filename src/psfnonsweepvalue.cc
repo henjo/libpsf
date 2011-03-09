@@ -14,7 +14,7 @@ Chunk * ValueSectionNonSweep::child_factory(int chunktype) const {
     }
 }
 
-const PSFScalar* ValueSectionNonSweep::get_value(std::string name) const {
+const PSFScalar& ValueSectionNonSweep::get_value(std::string name) const {
     return dynamic_cast<const NonSweepValue &>(get_child(name)).get_value();
 }
 

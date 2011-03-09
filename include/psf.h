@@ -56,7 +56,7 @@ class PSFDataSet {
     PropertyMap get_signal_properties(std::string name) const;
     PSFBase *get_signal(std::string name) const;
     PSFVector *get_signal_vector(std::string name) const ;
-    const PSFScalar *get_signal_scalar(std::string name) const;
+    const PSFScalar& get_signal_scalar(std::string name) const;
 
     void set_invertstruct(bool value) { invertstruct = value; }
     bool get_invertstruct() { return invertstruct; }

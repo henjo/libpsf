@@ -450,7 +450,7 @@ class NonSweepValue : public Chunk {
 
     const std::string& get_name() const { return name.value; }
 
-    const PSFScalar* get_value() const { return value; } 
+    const PSFScalar& get_value() const { return *value; } 
 
     const PropertyList& get_properties() const { return properties; }
 
@@ -527,7 +527,7 @@ class ValueSectionNonSweep: public IndexedContainer {
     
     ValueSectionNonSweep(PSFFile *_psf) : psf(_psf) {};
 
-    const PSFScalar* get_value(std::string name) const;
+    const PSFScalar& get_value(std::string name) const;
     PropertyMap get_value_properties(const std::string name) const;
     
     virtual Chunk *child_factory(int chunktype) const;
@@ -589,7 +589,7 @@ public:
     PSFVector *get_param_values() const;
     PropertyMap get_value_properties(std::string name) const;
     PSFVector *get_values(std::string name) const;
-    const PSFScalar* get_value(std::string name) const;
+    const PSFScalar& get_value(std::string name) const;
     
     NameList get_names() const;
     

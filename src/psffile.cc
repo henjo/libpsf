@@ -141,7 +141,7 @@ PropertyMap PSFFile::get_value_properties(std::string name) const {
     return nonsweepvalues->get_value_properties(name);
 }
 
-const PSFScalar * PSFFile::get_value(std::string name) const {
+const PSFScalar& PSFFile::get_value(std::string name) const {
     if(nonsweepvalues)
 	return nonsweepvalues->get_value(name);
 }

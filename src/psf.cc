@@ -38,8 +38,7 @@ PSFBase* PSFDataSet::get_signal(std::string name) const {
 	    return vec;
     } else {
 	// Convert to const
-	const PSFScalar *const_scalar = psf->get_value(name);
-	PSFScalar *scalar = const_scalar->clone();
+	PSFScalar *scalar = psf->get_value(name).clone();
 	return scalar;
     }
 }
@@ -48,7 +47,7 @@ PSFVector *PSFDataSet::get_signal_vector(std::string name) const {
     return psf->get_values(name);
 }
 
-const PSFScalar *PSFDataSet::get_signal_scalar(std::string name) const {	
+const PSFScalar& PSFDataSet::get_signal_scalar(std::string name) const {	
     return psf->get_value(name);
 }
 
