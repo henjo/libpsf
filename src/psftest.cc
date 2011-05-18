@@ -2,7 +2,6 @@
 #include "psfdata.h"
 
 #include <string>
-#include <boost/foreach.hpp>
 
 void noisesummary() {
     std::string pnoisefile("/nfs/home/henrik/spectre/1/pnoise.raw/pnoise_pout3g.pnoise");

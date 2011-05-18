@@ -125,7 +125,7 @@ PSFInt32Scalar::operator double() const {
 // PSFDoubleScalar
 template<>
 int PSFDoubleScalar::deserialize(const char *buf) {
-    *((uint64_t *)&value) = be64toh(*((uint64_t *)buf));
+    GET_DOUBLE(value, buf); 
     return 8;
 }
 template<>
@@ -140,7 +140,7 @@ PSFDoubleScalar::operator double() const {
 // PSFDoubleScalar
 template<>
 int PSFComplexDoubleScalar::deserialize(const char *buf) {
-    *((uint64_t *)&value) = be64toh(*((uint64_t *)buf));
+    GET_DOUBLE(value, buf); 
     return 8;
 }
 template<>

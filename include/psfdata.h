@@ -5,7 +5,7 @@
 #include <complex>
 #include <iostream>
 #include <map>
-#include <tr1/unordered_map>
+//#include <tr1/unordered_map>
 #include <vector>
 #include <sstream>
 
@@ -38,7 +38,7 @@ typedef std::string PSFString;
 // 
 // Composite data types
 //
-class Struct: public std::tr1::unordered_map<std::string, PSFScalar *> {
+class Struct: public std::map<std::string, PSFScalar *> {
  private:
     const StructDef *structdef;
  public:
@@ -182,7 +182,7 @@ typedef PSFVectorT<Struct> StructVector;
 
 int psfdata_size(int type_id);
 
-class VectorStruct: public PSFBase, public std::tr1::unordered_map<std::string, PSFVector *> {
+class VectorStruct: public PSFBase, public std::map<std::string, PSFVector *> {
  private:
     int n;
     void init_from_structdef(const StructDef *structdef);

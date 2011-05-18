@@ -10,11 +10,15 @@
 #include <fstream>
 #include <list>
 #include <vector>
+
+#ifdef HAVE_TR1_UNORDERED_MAP
 #include <tr1/unordered_map>
+#endif
 
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "psfdata.h"
+#include "psfendian.h"
 
 //
 // PSF constants
@@ -54,14 +58,23 @@ class SweepValueSimple;
 //
 typedef std::vector<const Chunk *> ChildList;
 typedef std::vector<Property> PropertyList;
-typedef std::tr1::unordered_map<int,int> TraceIDOffsetMap;
 typedef std::vector<int> OffsetList;
 typedef std::vector<int> TraceIdx;
 typedef std::vector<const Chunk *> Filter;
 typedef std::vector<std::string> NameList;
-typedef std::tr1::unordered_map<std::string, int> NameIndexMap;
 typedef std::vector<SweepValue> SweepValueList;
 typedef std::map<std::string, const PSFScalar *> PropertyMap;
+#ifdef HAVE_TR1_UNORDERED_MAP
+typedef std::tr1::unordered_map<int,int> TraceIDOffsetMap;
+typedef std::tr1::unordered_map<std::string, int> NameIndexMap;
+typedef std::tr1::unordered_map<std::string, int> NameIdMap;
+typedef std::tr1::unordered_map<int, const Chunk *> IdMap;
+#else
+typedef std::map<int,int> TraceIDOffsetMap;
+typedef std::map<std::string, int> NameIndexMap;
+typedef std::map<std::string, int> NameIdMap;
+typedef std::map<int, const Chunk *> IdMap;
+#endif
 
 class DataList : public std::vector<PSFScalar *> {
  public:
@@ -186,7 +199,7 @@ class TraceIndex: public Chunk {
 
 class IndexedContainer: public Container {
  private:
-    std::tr1::unordered_map<int, const Chunk *> idmap;
+    IdMap idmap;
     NameIndexMap namemap;
  public:	
     virtual int deserialize(const char *buf, int abspos);
@@ -253,7 +266,7 @@ private:
     virtual int deserialize(const char *buf);
 
     TraceIDOffsetMap indexmap;
-    std::tr1::unordered_map<std::string, int> namemap;
+    NameIdMap namemap;
     
     void _create_valueindexmap();
 

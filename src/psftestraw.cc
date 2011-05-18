@@ -1,8 +1,6 @@
 #include "psf.h"
 
 #include <string>
-#include <boost/foreach.hpp>
-
 
 int main() {
     PSFFile psf("/nfs/home/henrik/spectre/1/pnoise.raw/pnoise_pout3g.pnoise");
