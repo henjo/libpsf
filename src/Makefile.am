@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libpsf.la
 
 bin_PROGRAMS = psftest
 psftest_SOURCES = psftest.cc
-psftest_CXXFLAGS = -I../include
+psftest_CXXFLAGS = -I../include ${BOOST_CPPFLAGS}
 psftest_LDFLAGS = libpsf.la
 
 libpsf_la_SOURCES = psf.cc psfdata.cc psfproperty.cc psfchunk.cc \
@@ -11,5 +11,6 @@ libpsf_la_SOURCES = psf.cc psfdata.cc psfproperty.cc psfchunk.cc \
 	psfnonsweepvalue.cc psfsweepvalue.cc
 
 libpsf_la_CXXFLAGS = \
-	-I../include
+	-I../include ${BOOST_CPPFLAGS}
+
 

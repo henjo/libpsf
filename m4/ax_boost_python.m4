@@ -56,15 +56,14 @@
 #   special exception to the GPL to apply to your modified version as well.
 
 AC_DEFUN([AX_BOOST_PYTHON],
-[AC_REQUIRE([AX_PYTHON])dnl
+[AC_REQUIRE([AX_PYTHON_DEVEL])dnl
 AC_CACHE_CHECK(whether the Boost::Python library is available,
 ac_cv_boost_python,
 [AC_LANG_SAVE
  AC_LANG_CPLUSPLUS
  CPPFLAGS_SAVE=$CPPFLAGS
- if test "x$PYTHON_INCLUDE_DIR" != "x"; then
-   CPPFLAGS="-I$PYTHON_INCLUDE_DIR $CPPFLAGS"
- fi
+ CPPFLAGS="$PYTHON_CPPFLAGS $BOOST_CPPFLAGS $CPPFLAGS"
+
  AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
  #include <boost/python/module.hpp>
  using namespace boost::python;
@@ -82,8 +81,8 @@ if test "$ac_cv_boost_python" = "yes"; then
      ax_python_lib=$with_boost_python
      ax_boost_python_lib=boost_python-$with_boost_python
    fi])
-  for ax_lib in $ax_python_lib $ax_boost_python_lib boost_python boost_python-mt boost_python-mt-py2.5 boost_python-mt-py2.6; do
-    AC_CHECK_LIB($ax_lib, exit, [BOOST_PYTHON_LIB=$ax_lib break], [], [-l$PYTHON_LIB])
+  for ax_lib in $ax_boost_python_lib boost_python boost_python-mt boost_python-mt-py2.5 boost_python-mt-py2.6; do
+    AC_CHECK_LIB($ax_lib, exit, [BOOST_PYTHON_LIB=$ax_lib break], [], [$PYTHON_LDFLAGS])
   done
   AC_SUBST(BOOST_PYTHON_LIB)
 fi

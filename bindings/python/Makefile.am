@@ -13,12 +13,14 @@ _psf_la_LIBADD = \
 
 _psf_la_CXXFLAGS = \
 	-I../../include \
-	-I${PYTHON_INCLUDE_DIR} \
+	${BOOST_CPPFLAGS} \
+	${PYTHON_CPPFLAGS} \
 	-I${NUMPY_INCLUDE_DIR}
 
 _psf_la_LDFLAGS = \
 	-avoid-version -module \
-	-l${BOOST_PYTHON_LIB}
+	-l${BOOST_PYTHON_LIB} \
+	${BOOST_LDFLAGS}
 
 _psf_la_DEPENDENCIES =\
 	../../src/libpsf.la

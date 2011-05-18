@@ -58,21 +58,32 @@
 AC_DEFUN([AX_PYTHON],
 [AC_MSG_CHECKING(for python build information)
 AC_MSG_RESULT([])
-for python in python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python; do
-AC_CHECK_PROGS(PYTHON_BIN, [$python])
-ax_python_bin=$PYTHON_BIN
-if test x$ax_python_bin != x; then
-   AC_CHECK_LIB($ax_python_bin, main, ax_python_lib=$ax_python_bin, ax_python_lib=no)
-   AC_CHECK_HEADER([$ax_python_bin/Python.h],
-   ax_python_header=/usr/include/$ax_python_bin,
-   ax_python_header=no)
-   if test $ax_python_lib != no; then
-     if test $ax_python_header != no; then
-       break;
-     fi
-   fi
+
+AC_ARG_VAR(PYTHONBINARY, [Python binary])
+
+if test x$PYTHONBINARY == x; then
+   PYTHONBINARY=python
 fi
-done
+
+AC_PATH_PROG([ax_python_bin], $PYTHONBINARY)
+
+ax_python_bin=$PYTHONBINARY
+
+if test x$ax_python_bin != x; then
+  python_inc_dir=`$ax_python_bin -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())"`
+  python_lib_dir=`$ax_python_bin -c "import distutils.sysconfig; print(distutils.sysconfig.get_config_vars('LIBDIR')[[0]])"`
+  python_library=`$ax_python_bin -c "import re, distutils.sysconfig; print(re.match(\"lib(.+)\.so.*\",distutils.sysconfig.get_config_vars('LDLIBRARY')[[0]]).groups(0)[[0]])"`
+
+  AC_CHECK_LIB([$python_library], main, ax_python_lib=$python_library, ax_python_lib=no)
+  AC_CHECK_HEADER([$python_inc_dir/Python.h], ax_python_header=$python_inc_dir, ax_python_header=no)
+
+  AC_MSG_RESULT([python_bin: $python_bin])
+  AC_MSG_RESULT([python_inc_dir: $python_inc_dir])
+  AC_MSG_RESULT([python_lib_dir: $python_lib_dir])
+  AC_MSG_RESULT([python_library: $python_library])
+fi
+
+
 if test x$ax_python_bin = x; then
    ax_python_bin=no
 fi
