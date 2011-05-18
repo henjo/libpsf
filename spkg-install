@@ -11,6 +11,6 @@ set -e
 unset RM
 unset MAKEFLAGS
 
-./autogen.sh --prefix="$SPKG_LOCAL"
+./autogen.sh --prefix="$SPKG_LOCAL" --with-boost=$SPKG_LOCAL --with-python
 make
 make install
