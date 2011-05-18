@@ -11,6 +11,6 @@ set -e
 unset RM
 unset MAKEFLAGS
 
-./configure --prefix="$SPKG_LOCAL"
+./autogen.sh --prefix="$SPKG_LOCAL"
 make
 make install
