@@ -1,8 +1,8 @@
-B0;136;0c#                                               -*- Autoconf -*-
+#                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([libpsf],[0.0],[henrik@johome.net])
+AC_INIT([libpsf],[0.1],[henrik@johome.net])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.9 -Wall no-define])
 
@@ -81,6 +81,7 @@ dnl Include libtool to build shared libraries
 dnl LT_INIT
 
 AC_CONFIG_FILES([Makefile
+		 include/Makefile
                  src/Makefile
 		 bindings/Makefile
 		 bindings/python/Makefile

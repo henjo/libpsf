@@ -2,7 +2,7 @@ Source: libpsf
 Section: libs
 Priority: extra
 Maintainer: Henrik Johansson <henrik@johome.net>
-Build-Depends: debhelper (>= 7), autotools-dev, libboost-python-dev
+Build-Depends: debhelper (>= 7), autotools-dev, libboost-python-dev, python-numpy-dev
 Standards-Version: 3.8.1
 Homepage: https://github.com/henjo/libpsf
 
@@ -12,10 +12,16 @@ Architecture: any
 Depends: libpsf (= ${binary:Version})
 Description: development package for libpsf
 
-
 Package: libpsf
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: PSF waveform data reader C++ library
+  libpsf is a c++ library that reads Cadence PSF waveform files
+
+Package: python-libpsf
+Section: libs
+Architecture: any
+Depends: libpsf (= ${binary:Version}), python-numpy, libboost-python-dev
+Description: PSF waveform data reader Python bindings
   libpsf is a c++ library that reads Cadence PSF waveform files
