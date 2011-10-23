@@ -1,0 +1,21 @@
+Source: libpsf
+Section: libs
+Priority: extra
+Maintainer: Henrik Johansson <henrik@johome.net>
+Build-Depends: debhelper (>= 7), autotools-dev, libboost-python-dev
+Standards-Version: 3.8.1
+Homepage: https://github.com/henjo/libpsf
+
+Package: libpsf-dev
+Section: libdevel
+Architecture: any
+Depends: libpsf (= ${binary:Version})
+Description: development package for libpsf
+
+
+Package: libpsf
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: PSF waveform data reader C++ library
+  libpsf is a c++ library that reads Cadence PSF waveform files
