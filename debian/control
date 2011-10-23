@@ -10,19 +10,19 @@ Package: libpsf-dev
 Section: libdevel
 Architecture: any
 Depends: libpsf (= ${binary:Version})
-Description: development package for libpsf
-  libpsf is a c++ library that reads Cadence PSF waveform files
+Description: Development package for libpsf
+ libpsf is a c++ library that reads Cadence PSF waveform files
 
 Package: libpsf
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: PSF waveform data reader C++ library
-  libpsf is a c++ library that reads Cadence PSF waveform files
+ libpsf is a c++ library that reads Cadence PSF waveform files
 
 Package: python-libpsf
 Section: libs
 Architecture: any
 Depends: libpsf (= ${binary:Version}), python-numpy, libboost-python-dev
 Description: PSF waveform data reader Python bindings
-  libpsf is a c++ library that reads Cadence PSF waveform files
+ libpsf is a c++ library that reads Cadence PSF waveform files
