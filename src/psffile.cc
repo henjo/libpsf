@@ -128,6 +128,11 @@ bool PSFFile::validate() const {
     return !strcmp(clarissa, "Clarissa");
 }	
 
+
+NameList PSFFile::get_param_names() const {
+    return sweeps->get_names();
+}
+
 PSFVector * PSFFile::get_param_values() const {
     return sweepvalues->get_param_values();
 }

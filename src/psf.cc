@@ -20,6 +20,10 @@ int PSFDataSet::get_sweep_npoints() const {
     return (int) *psf->header->get_property("PSF sweep points");
 }
 
+const std::vector<std::string> PSFDataSet::get_sweep_param_names() const {
+    return psf->get_param_names();
+}
+
 PSFVector *PSFDataSet::get_sweep_values() const {	
     return psf->get_param_values();
 }

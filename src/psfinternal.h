@@ -599,6 +599,7 @@ public:
     ValueSectionSweep *sweepvalues;
     ValueSectionNonSweep *nonsweepvalues;
 
+    NameList get_param_names() const;
     PSFVector *get_param_values() const;
     PropertyMap get_value_properties(std::string name) const;
     PSFVector *get_values(std::string name) const;

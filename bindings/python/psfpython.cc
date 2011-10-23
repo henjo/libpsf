@@ -179,20 +179,21 @@ BOOST_PYTHON_MODULE(_psf)
     ;
 
     class_<PSFDataSet>("PSFDataSet", init<std::string>())
-	.def("get_sweep_npoints", &PSFDataSet::get_sweep_npoints)
-	.def("get_signal_names", &PSFDataSet::get_signal_names)
-	.def("get_sweep_values", &PSFDataSet::get_sweep_values,
+	.def("get_sweep_npoints",                     &PSFDataSet::get_sweep_npoints)
+	.def("get_signal_names",                      &PSFDataSet::get_signal_names)
+	.def("get_sweep_param_names",                 &PSFDataSet::get_sweep_param_names)
+	.def("get_sweep_values",                      &PSFDataSet::get_sweep_values,
 	     return_value_policy<return_by_value>())
-	.def("get_signal", &PSFDataSet::get_signal, 
+	.def("get_signal",                            &PSFDataSet::get_signal, 
 	     return_value_policy<return_by_value>())
-	.def("get_header_properties", &PSFDataSet::get_header_properties,
+	.def("get_header_properties",                 &PSFDataSet::get_header_properties,
 	     return_value_policy<return_by_value>())
-	.def("get_signal_properties", &PSFDataSet::get_signal_properties,
+	.def("get_signal_properties",                 &PSFDataSet::get_signal_properties,
 	     return_value_policy<return_by_value>())
-	.def("is_swept", &PSFDataSet::is_swept)
+	.def("is_swept",                              &PSFDataSet::is_swept)
 	.add_property("invertstruct",
-		      &PSFDataSet::get_invertstruct,
-		      &PSFDataSet::set_invertstruct)
+		                                      &PSFDataSet::get_invertstruct,
+		                                      &PSFDataSet::set_invertstruct)
     ;
 
     class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());

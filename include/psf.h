@@ -51,8 +51,11 @@ class PSFDataSet {
 
     const std::vector<std::string> get_signal_names() const;
     bool is_swept() const;
+
+    const std::vector<std::string> get_sweep_param_names() const;
     int get_sweep_npoints() const;
     PSFVector *get_sweep_values() const;
+
     PropertyMap get_signal_properties(std::string name) const;
     PSFBase *get_signal(std::string name) const;
     PSFVector *get_signal_vector(std::string name) const ;
