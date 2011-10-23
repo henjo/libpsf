@@ -11,6 +11,7 @@ Section: libdevel
 Architecture: any
 Depends: libpsf (= ${binary:Version})
 Description: development package for libpsf
+  libpsf is a c++ library that reads Cadence PSF waveform files
 
 Package: libpsf
 Section: libs
