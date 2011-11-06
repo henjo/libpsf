@@ -133,13 +133,18 @@ NameList PSFFile::get_param_names() const {
     return sweeps->get_names();
 }
 
-PSFVector * PSFFile::get_param_values() const {
-    return sweepvalues->get_param_values();
+PSFVector* PSFFile::get_param_values() const {
+    if (sweepvalues != NULL) 
+	return sweepvalues->get_param_values();
+    else
+	return NULL;
 }
 
-PSFVector * PSFFile::get_values(std::string name) const {
+PSFVector* PSFFile::get_values(std::string name) const {
     if(sweepvalues)
 	return sweepvalues->get_values(name);
+    else
+	return NULL;
 }	
 
 PropertyMap PSFFile::get_value_properties(std::string name) const {

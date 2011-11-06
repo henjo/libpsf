@@ -81,9 +81,11 @@ PSFVector* ValueSectionSweep::get_param_values() const {
     Filter filter;
     SweepValue *v = get_values(filter);
 
-    //FIXME, v is not deallocated
+    PSFVector *result = v->get_param_values(true);
 
-    return v->get_param_values();
+    delete v;
+
+    return result;
 }
 
 
@@ -129,8 +131,14 @@ SweepValue * ValueSectionSweep::new_value() const {
 	return new SweepValueSimple();
 }
 
+PSFVector * SweepValue::get_param_values(bool release) {
+    PSFVector *result = paramvalues;
 
+    if(release)
+	paramvalues = NULL;
 
+    return result;	
+}
 
 SweepValue::~SweepValue() {
     if (paramvalues)

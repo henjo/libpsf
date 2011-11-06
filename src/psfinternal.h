@@ -355,7 +355,6 @@ public:
 //
 // PSF file section classes
 // 
-
 class HeaderSection: public SimpleContainer {	
 private:
     PropertyMap properties;
@@ -489,7 +488,8 @@ public:
 
     const std::string& get_name() const { return name.value; }
 
-    PSFVector *get_param_values() const { return paramvalues; }
+    PSFVector *get_param_values(bool release=false);
+
     virtual int deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, Filter &filter) {};
 };
 
