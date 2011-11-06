@@ -101,8 +101,11 @@ PyObject *psfvector_to_numpyarray(PSFVector *vec, bool copy=false) {
 
 	// Make source vector is deleted
 	copy = true;
+    } else if (vec == NULL) {
+	result = Py_None;
     }
-    if(copy)
+	
+    if(copy && (vec != NULL))
 	delete vec;
     
     return result;
@@ -138,6 +141,8 @@ struct PSFBase_to_numpyarray {
 
 		if(vs != NULL)
 		    return vectorstruct_to_python(vs);
+		else
+		    return Py_None;
 	    }
 	}
     }

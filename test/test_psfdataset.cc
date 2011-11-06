@@ -36,6 +36,7 @@ class TestPSFDataSet : public CPPUNIT_NS::TestCase {
     CPPUNIT_TEST(test_get_signal_names);
     CPPUNIT_TEST(test_get_sweep_npoints);
     CPPUNIT_TEST(test_get_sweep_values);
+    CPPUNIT_TEST(test_get_sweep_param_names);
     CPPUNIT_TEST_SUITE_END();
     
 public:
@@ -46,6 +47,7 @@ protected:
     void test_get_signal_names();
     void test_get_sweep_npoints();
     void test_get_sweep_values();
+    void test_get_sweep_param_names();
 
 private:	
     std::auto_ptr<PSFDataSet> m_dcop_ds;
@@ -70,6 +72,11 @@ void TestPSFDataSet::test_get_sweep_npoints() {
 void TestPSFDataSet::test_get_sweep_values() {
     // test dcOp
     CPPUNIT_ASSERT(m_dcop_ds->get_sweep_values() == NULL);
+}
+
+void TestPSFDataSet::test_get_sweep_param_names() {
+    // test dcOp
+    CPPUNIT_ASSERT(m_dcop_ds->get_sweep_param_names().size() == 0);
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestPSFDataSet);

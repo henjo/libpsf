@@ -130,7 +130,10 @@ bool PSFFile::validate() const {
 
 
 NameList PSFFile::get_param_names() const {
-    return sweeps->get_names();
+    if (sweeps != NULL)
+	return sweeps->get_names();
+    else
+	return NameList();
 }
 
 PSFVector* PSFFile::get_param_values() const {
