@@ -1,7 +1,12 @@
+if ENABLE_TESTS
+  MAYBE_TEST = test
+endif
+
 SUBDIRS = \
 	src \
 	include \
-	bindings
+	bindings \
+	$(MAYBE_TEST)
 
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA=libpsf.pc
