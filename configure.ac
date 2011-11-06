@@ -83,7 +83,7 @@ dnl LT_INIT
 dnl Check if we should build tests
 AC_ARG_ENABLE([tests], AS_HELP_STRING([--enable-tests], [Enable tests]))
 
-AS_IF([test [test "$enable_tests" = yes]], [
+AS_IF([test "$enable_tests" = yes], [
    dnl Check for cppunit for tests
    AM_PATH_CPPUNIT(1.9.6)
 ])
