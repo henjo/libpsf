@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([libpsf],[0.1],[henrik@johome.net])
+AC_INIT([libpsf],[0.2],[henrik@johome.net])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.9 -Wall no-define])
 

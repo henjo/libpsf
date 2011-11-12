@@ -16,6 +16,10 @@ const std::vector<std::string> PSFDataSet::get_signal_names() const {
     return psf->get_names();
 }
 
+int PSFDataSet::get_nsweeps() const {
+    return *(psf->header->get_header_properties().find("PSF sweeps")->second);
+}
+
 int PSFDataSet::get_sweep_npoints() const {
     return (int) *psf->header->get_property("PSF sweep points");
 }

@@ -184,6 +184,7 @@ BOOST_PYTHON_MODULE(_psf)
     ;
 
     class_<PSFDataSet>("PSFDataSet", init<std::string>())
+	.def("get_nsweeps",                           &PSFDataSet::get_nsweeps)
 	.def("get_sweep_npoints",                     &PSFDataSet::get_sweep_npoints)
 	.def("get_signal_names",                      &PSFDataSet::get_signal_names)
 	.def("get_sweep_param_names",                 &PSFDataSet::get_sweep_param_names)

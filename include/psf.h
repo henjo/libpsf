@@ -52,6 +52,7 @@ class PSFDataSet {
     const std::vector<std::string> get_signal_names() const;
     bool is_swept() const;
 
+    int get_nsweeps() const;
     const std::vector<std::string> get_sweep_param_names() const;
     int get_sweep_npoints() const;
     PSFVector *get_sweep_values() const;

@@ -34,6 +34,7 @@ bool stringvector_set_equal(stringvector_t a, stringvector_t b) {
 class TestPSFDataSet : public CPPUNIT_NS::TestCase {
     CPPUNIT_TEST_SUITE(TestPSFDataSet);	
     CPPUNIT_TEST(test_get_signal_names);
+    CPPUNIT_TEST(test_get_nsweeps);
     CPPUNIT_TEST(test_get_sweep_npoints);
     CPPUNIT_TEST(test_get_sweep_values);
     CPPUNIT_TEST(test_get_sweep_param_names);
@@ -45,6 +46,7 @@ public:
     
 protected:
     void test_get_signal_names();
+    void test_get_nsweeps();
     void test_get_sweep_npoints();
     void test_get_sweep_values();
     void test_get_sweep_param_names();
@@ -62,6 +64,11 @@ void TestPSFDataSet::test_get_signal_names() {
     const char *expected_names[] = { "vin", "vout" };
     stringvector_t names = m_dcop_ds->get_signal_names();
     CPPUNIT_ASSERT(stringvector_set_equal(names, STRINGVECTOR_FROM_CHARARRAYS(expected_names)));
+}
+
+void TestPSFDataSet::test_get_nsweeps() {
+    // test dcOp
+    CPPUNIT_ASSERT(m_dcop_ds->get_nsweeps() == 0);
 }
 
 void TestPSFDataSet::test_get_sweep_npoints() {
