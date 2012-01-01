@@ -171,7 +171,7 @@ void translate_exception_fileopenerror(FileOpenError const& e) {
 }
 
 
-BOOST_PYTHON_MODULE(_psf)
+BOOST_PYTHON_MODULE(libpsf)
 { 
     import_array();
     to_python_converter<PropertyMap, PropertyMap_to_python>();

@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+ 
+from distutils.core import setup
+from distutils.extension import Extension
+ 
+setup(name="libpsf",
+    ext_modules=[
+        Extension(name = "libpsf", 
+                  sources = ["psfpython.cc"],
+                  include_dirs = ["@top_srcdir@/include"],
+                  library_dirs = ["@top_builddir@/src/.libs"],
+                  libraries = ["boost_python", "psf"])
+        ])

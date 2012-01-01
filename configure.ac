@@ -90,6 +90,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 bindings/Makefile
 		 bindings/python/Makefile
+		 bindings/python/setup.py
 		 test/Makefile
 		 libpsf.pc
 		 libpsf-uninstalled.pc

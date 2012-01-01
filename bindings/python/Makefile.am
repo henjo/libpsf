@@ -1,26 +1,17 @@
-pkgpython_PYTHON = __init__.py
+EXTRA_DIST = setup.py
 
-pkgpyexec_LTLIBRARIES= \
-	_psf.la
+if WITH_PYTHONBINDINGS
 
-_psf_la_SOURCES = \
-	psfpython.cc
+all-local:
+	$(PYTHON) setup.py build
 
-_psf_la_LIBADD = \
-	../../src/libpsf.la \
-	${PYTHON_LIB} \
-	${BOOST_PYTHON_LIB}
+install-exec-local:
+	$(PYTHON) setup.py install @PYTHON_INSTALL_PARAMS@
 
-_psf_la_CXXFLAGS = \
-	-I../../include \
-	${BOOST_CPPFLAGS} \
-	${PYTHON_CPPFLAGS} \
-	-I${NUMPY_INCLUDE_DIR}
+uninstall-local:
+	rm -rf $(DESTDIR)$(libdir)/python*/*-packages/*libpsf*
 
-_psf_la_LDFLAGS = \
-	-avoid-version -module \
-	-l${BOOST_PYTHON_LIB} \
-	${BOOST_LDFLAGS}
+clean-local:
+	$(PYTHON) setup.py clean --all
 
-_psf_la_DEPENDENCIES =\
-	../../src/libpsf.la
+endif
