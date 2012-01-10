@@ -32,6 +32,7 @@ public:
 
 class NotImplemented: public std::exception {};
 class FileOpenError: public std::exception {};
+class InvalidFileError: public std::exception {};
 class NotFound: public std::exception {};
 
 #include "psfdata.h"

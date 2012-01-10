@@ -106,6 +106,8 @@ void PSFFile::open() {
 
     if(validate())
 	deserialize(buffer, size);
+    else
+	throw InvalidFileError();
 }
 
 void PSFFile::close() {
