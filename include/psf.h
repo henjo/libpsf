@@ -33,6 +33,7 @@ public:
 class NotImplemented: public std::exception {};
 class FileOpenError: public std::exception {};
 class InvalidFileError: public std::exception {};
+class FileCloseError: public std::exception {};
 class NotFound: public std::exception {};
 
 #include "psfdata.h"
@@ -44,24 +45,27 @@ class PSFDataSet {
     PSFFile *psf;
     std::string filename;
     bool invertstruct;
+    bool _open;
  public:
     PSFDataSet(std::string filename);
     ~PSFDataSet();
+    void close() ;
+    void open() ;
 
-    const PropertyMap& get_header_properties() const;
+    const PropertyMap& get_header_properties();
 
-    const std::vector<std::string> get_signal_names() const;
-    bool is_swept() const;
+    const std::vector<std::string> get_signal_names();
+    bool is_swept();
 
-    int get_nsweeps() const;
-    const std::vector<std::string> get_sweep_param_names() const;
-    int get_sweep_npoints() const;
-    PSFVector *get_sweep_values() const;
+    int get_nsweeps();
+    const std::vector<std::string> get_sweep_param_names();
+    int get_sweep_npoints();
+    PSFVector *get_sweep_values();
 
-    PropertyMap get_signal_properties(std::string name) const;
-    PSFBase *get_signal(std::string name) const;
-    PSFVector *get_signal_vector(std::string name) const ;
-    const PSFScalar& get_signal_scalar(std::string name) const;
+    PropertyMap get_signal_properties(std::string name);
+    PSFBase *get_signal(std::string name);
+    PSFVector *get_signal_vector(std::string name) ;
+    const PSFScalar& get_signal_scalar(std::string name);
 
     void set_invertstruct(bool value) { invertstruct = value; }
     bool get_invertstruct() { return invertstruct; }
