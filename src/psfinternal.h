@@ -586,7 +586,9 @@ class PSFFile {
  private:
     int fd;
     void deserialize(const char *buf, int size);
-  
+    char *buffer;
+    int size;
+
 public:	
     PSFFile(std::string _filename);
     ~PSFFile();

@@ -197,6 +197,7 @@ BOOST_PYTHON_MODULE(_psf)
 	.def("get_signal_properties",                 &PSFDataSet::get_signal_properties,
 	     return_value_policy<return_by_value>())
 	.def("is_swept",                              &PSFDataSet::is_swept)
+        .def("close",                                 &PSFDataSet::close)
 	.add_property("invertstruct",
 		                                      &PSFDataSet::get_invertstruct,
 		                                      &PSFDataSet::set_invertstruct)
