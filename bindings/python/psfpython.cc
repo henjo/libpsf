@@ -10,6 +10,7 @@
 #include <boost/python/return_value_policy.hpp>
 #include <boost/python/exception_translator.hpp>
 #include <boost/python/dict.hpp>
+#include <boost/python/docstring_options.hpp>
 
 #include <sstream>
 
@@ -170,7 +171,7 @@ void translate_exception_fileopenerror(FileOpenError const& e) {
 }
 
 
-BOOST_PYTHON_MODULE(_psf)
+BOOST_PYTHON_MODULE(libpsf)
 { 
     import_array();
     to_python_converter<PropertyMap, PropertyMap_to_python>();
@@ -178,30 +179,63 @@ BOOST_PYTHON_MODULE(_psf)
     to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
     to_python_converter<const PSFScalar *, PSFScalar_to_python>();
     to_python_converter<Struct, Struct_to_python>();
-
+    
     class_< std::vector<std::string> >("StringVec")
-	.def(vector_indexing_suite<std::vector<std::string> >())
-    ;
+        .def(vector_indexing_suite<std::vector<std::string> >())
+        ;
 
-    class_<PSFDataSet>("PSFDataSet", init<std::string>())
-	.def("get_nsweeps",                           &PSFDataSet::get_nsweeps)
-	.def("get_sweep_npoints",                     &PSFDataSet::get_sweep_npoints)
-	.def("get_signal_names",                      &PSFDataSet::get_signal_names)
-	.def("get_sweep_param_names",                 &PSFDataSet::get_sweep_param_names)
-	.def("get_sweep_values",                      &PSFDataSet::get_sweep_values,
-	     return_value_policy<return_by_value>())
-	.def("get_signal",                            &PSFDataSet::get_signal, 
-	     return_value_policy<return_by_value>())
-	.def("get_header_properties",                 &PSFDataSet::get_header_properties,
-	     return_value_policy<return_by_value>())
-	.def("get_signal_properties",                 &PSFDataSet::get_signal_properties,
-	     return_value_policy<return_by_value>())
-	.def("is_swept",                              &PSFDataSet::is_swept)
-	.add_property("invertstruct",
-		                                      &PSFDataSet::get_invertstruct,
-		                                      &PSFDataSet::set_invertstruct)
-    ;
+    bool show_user_defined = true;
+    bool show_cpp_signatures = false;
+    bool show_py_signatures = true;
+    docstring_options doc_options(show_user_defined, show_py_signatures, show_cpp_signatures);
 
+    class_<PSFDataSet>("PSFDataSet", "Open a psf results file.",
+                       init<std::string>((arg("self"), arg("filename"))))
+        .def("get_nsweeps",
+             &PSFDataSet::get_nsweeps,
+             (arg("self")),
+             "Return the number of sweeps")
+        .def("get_sweep_npoints",
+             &PSFDataSet::get_sweep_npoints,
+             (arg("self")),
+             "Return the number of points in the sweep")
+        .def("get_signal_names",
+             &PSFDataSet::get_signal_names,
+             (arg("self")),
+             "Return a list of signal names")
+        .def("get_sweep_param_names",
+             &PSFDataSet::get_sweep_param_names,
+             (arg("self")),
+             "Parameter that has been swept")
+        .def("get_sweep_values",
+             &PSFDataSet::get_sweep_values,
+             (arg("self")),
+             "numpy array of swept values",
+             return_value_policy<return_by_value>())
+        .def("get_signal",
+             &PSFDataSet::get_signal,
+             (arg("self"), arg("signal")),
+             "numpy array of signal values",
+             return_value_policy<return_by_value>())
+        .def("get_header_properties",
+             &PSFDataSet::get_header_properties,
+             (arg("self")),
+             "Dict of header properties and values",
+             return_value_policy<return_by_value>())
+        .def("get_signal_properties",
+             &PSFDataSet::get_signal_properties,
+             (arg("self"), arg("signal")),
+             "Properties of a non swept signal",
+             return_value_policy<return_by_value>())
+        .def("is_swept",
+             &PSFDataSet::is_swept,
+             (arg("self")),
+             "Is the data swept")
+        .add_property("invertstruct",
+                      &PSFDataSet::get_invertstruct,
+                      &PSFDataSet::set_invertstruct)
+        ;
+    
     class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());
     //    class_<NotFound> incorrectChunkClass("NotFound", init<>());
     boost::python::register_exception_translator<IncorrectChunk>(&translate_exception);
