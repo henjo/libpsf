@@ -30,6 +30,7 @@ PSFFile::~PSFFile() {
 	delete(sweepvalues);
     if(nonsweepvalues)
 	delete(nonsweepvalues);
+    close();
 }
 
 void PSFFile::deserialize(const char *buf, int size) {
@@ -96,23 +97,29 @@ void PSFFile::deserialize(const char *buf, int size) {
 
 void PSFFile::open() {
     fd = ::open(filename.c_str(), O_RDONLY);
-
+  
     if (fd == -1)
 	throw FileOpenError();
-
-    off_t size = lseek(fd, 0, SEEK_END);
-    
-    const char *buffer = (const char *)mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
-
+  
+    size = lseek(fd, 0, SEEK_END);
+  
+    buffer = (char *)mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+  
     if(validate())
-	deserialize(buffer, size);
+	deserialize((const char *)buffer, size);
     else
 	throw InvalidFileError();
 }
 
 void PSFFile::close() {
+    int rval;
+
+    munmap((void*) buffer, size);
+    
     if(fd != -1) {
-	::close(fd);
+	rval = ::close(fd);
+	if (rval == -1)
+	    throw FileCloseError();
 	fd = -1;
     }
 }

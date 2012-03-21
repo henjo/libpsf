@@ -231,6 +231,10 @@ BOOST_PYTHON_MODULE(libpsf)
              &PSFDataSet::is_swept,
              (arg("self")),
              "Is the data swept")
+        .def("close",                                 
+	     &PSFDataSet::close,
+	     (arg("self")),
+	     "Close PSF data set")
         .add_property("invertstruct",
                       &PSFDataSet::get_invertstruct,
                       &PSFDataSet::set_invertstruct)
