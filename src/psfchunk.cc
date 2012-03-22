@@ -5,7 +5,7 @@
 int Chunk::deserialize(const char *buf) {
     uint32_t testtype = GET_INT32(buf);
 
-    if( (chunktype != -1) && testtype != chunktype )
+    if( (m_chunktype != -1) && testtype != m_chunktype )
 	throw IncorrectChunk(testtype);
 
     return 4;

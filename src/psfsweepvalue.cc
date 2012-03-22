@@ -4,57 +4,57 @@
 
 #include <assert.h>
 
-ValueSectionSweep::ValueSectionSweep(PSFFile *_psf) : psf(_psf) {
-    chunktype = ValueSectionSweep::type;
+ValueSectionSweep::ValueSectionSweep(PSFFile *psf) : m_psf(psf) {
+    m_chunktype = ValueSectionSweep::type;
 
-    windowedsweep = (psf->header->get_property("PSF window size") != NULL);
+    windowedsweep = (m_psf->get_header_property("PSF window size") != NULL);
 
-    valuebuf = endbuf = NULL;
+    m_valuebuf = endbuf = NULL;
 }
 
 void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {    
-    _valuesize = 0;
+    m_valuesize = 0;
 
     int valueoffset = 0;
     int child_datasize;
 
     if (windowedsweep) {
-	int windowsize = *psf->header->get_property("PSF window size");
+	int windowsize = *m_psf->get_header_property("PSF window size");
 	
-	for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
+	for(Container::const_iterator trace=m_psf->get_trace_section().begin(); trace != m_psf->get_trace_section().end(); trace++) {
 	    if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*trace)) 
-		child_datasize = groupdef->fill_offsetmap(offsetmap, windowsize, valueoffset);
+		child_datasize = groupdef->fill_offsetmap(m_offsetmap, windowsize, valueoffset);
 	    else
-		throw IncorrectChunk((*trace)->chunktype);
+		throw IncorrectChunk((*trace)->m_chunktype);
 
-	    _valuesize += child_datasize;
+	    m_valuesize += child_datasize;
 	    valueoffset += child_datasize;
 	}
     } else {
-	for(Container::const_iterator trace=psf->traces->begin(); trace != psf->traces->end(); trace++) {
+	for(Container::const_iterator trace=m_psf->get_trace_section().begin(); trace != m_psf->get_trace_section().end(); trace++) {
 	    if(const DataTypeRef *ref = dynamic_cast<const DataTypeRef *>(*trace)) {
 		child_datasize = ref->get_datatype().datasize();
-		offsetmap[ref->get_id()] = valueoffset + 8;
+		m_offsetmap[ref->get_id()] = valueoffset + 8;
 	    } else if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*trace))
-		child_datasize = groupdef->fill_offsetmap(offsetmap, 0, valueoffset + 8);
+		child_datasize = groupdef->fill_offsetmap(m_offsetmap, 0, valueoffset + 8);
 	    else 
-		throw IncorrectChunk((*trace)->chunktype);
+		throw IncorrectChunk((*trace)->m_chunktype);
 
-	    _valuesize += child_datasize;
+	    m_valuesize += child_datasize;
 	    valueoffset += 8 + child_datasize;
 	}
     }
 }
 
 SweepValue* ValueSectionSweep::get_values(Filter &filter) const {
-    const char *buf = valuebuf;
+    const char *buf = m_valuebuf;
 
     SweepValue *value = new_value();
     
-    int n = *psf->header->get_property("PSF sweep points");
+    int n = *m_psf->get_header_property("PSF sweep points");
     
     int windowoffset = 0;
-    value->deserialize(buf, &n, windowoffset, psf, filter);
+    value->deserialize(buf, &n, windowoffset, m_psf, filter);
 
     return value;
 }
@@ -62,7 +62,7 @@ SweepValue* ValueSectionSweep::get_values(Filter &filter) const {
 PSFVector* ValueSectionSweep::get_values(std::string name) const {
     // Create filter for retrieving the trace with correct name
     Filter filter;
-    filter.push_back(&psf->traces->get_trace_by_name(name));
+    filter.push_back(&m_psf->get_trace_section().get_trace_by_name(name));
     
     SweepValue *v = get_values(filter);
     
@@ -104,7 +104,7 @@ int ValueSectionSweep::deserialize(const char *buf, int abspos) {
         
     _create_valueoffsetmap(windowedsweep);
 
-    valuebuf = buf;
+    m_valuebuf = buf;
 
     endbuf = startbuf + endpos - abspos;
 
@@ -113,11 +113,11 @@ int ValueSectionSweep::deserialize(const char *buf, int abspos) {
 
 
 int ValueSectionSweep::valueoffset(int id) const {
-    return offsetmap.find(id)->second;
+    return m_offsetmap.find(id)->second;
 }
     
 const ValueSectionSweep::iterator ValueSectionSweep::begin(SweepValue *value, ChildList &filter) const {
-    return iterator(value, valuebuf, psf, &filter);
+    return iterator(value, m_valuebuf, m_psf, &filter);
 }    
 
 const ValueSectionSweep::iterator ValueSectionSweep::end() const {
@@ -132,17 +132,17 @@ SweepValue * ValueSectionSweep::new_value() const {
 }
 
 PSFVector * SweepValue::get_param_values(bool release) {
-    PSFVector *result = paramvalues;
+    PSFVector *result = m_paramvalues;
 
     if(release)
-	paramvalues = NULL;
+	m_paramvalues = NULL;
 
     return result;	
 }
 
 SweepValue::~SweepValue() {
-    if (paramvalues)
-	delete(paramvalues);
+    if (m_paramvalues)
+	delete(m_paramvalues);
 
     for(std::vector<PSFVector *>::const_iterator i = begin(); i != end(); i++)
 	delete(*i);
@@ -152,12 +152,12 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 				    Filter &filter) {
     const char *startbuf = buf;
 
-    int windowsize = *psf->header->get_property("PSF window size");
+    int windowsize = *psf->get_header_property("PSF window size");
 
     // Create parameter vector
-    DataTypeRef &paramtype = *((DataTypeRef *)(*psf->sweeps)[0]);
-    if(paramvalues == NULL)
-	paramvalues = paramtype.new_vector();
+    DataTypeRef &paramtype = *((DataTypeRef *)psf->get_sweep_section()[0]);
+    if(m_paramvalues == NULL)
+	m_paramvalues = paramtype.new_vector();
 
     // Create data vectors
     clear();
@@ -178,10 +178,10 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	buf += 4;
 	windowoffset += 4;
     
-	int pwinstart = paramvalues->size();
-	paramvalues->resize(paramvalues->size() + n);
+	int pwinstart = m_paramvalues->size();
+	m_paramvalues->resize(m_paramvalues->size() + n);
 	for(int j=0; j < n; j++)
-	    buf += paramtype.deserialize_data(paramvalues->ptr_at(pwinstart + j), buf);
+	    buf += paramtype.deserialize_data(m_paramvalues->ptr_at(pwinstart + j), buf);
 
 	const char *valuebuf = buf;
 	
@@ -191,7 +191,7 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**j);
 
 	    // calculate buffer pointer
-	    buf = valuebuf +  psf->sweepvalues->valueoffset((*j)->get_id()) +
+	    buf = valuebuf +  psf->get_value_section_sweep().valueoffset((*j)->get_id()) +
 		(windowsize - n * typeref.datasize());
 	    
 	    for(int k=0; k < n; k++)
@@ -214,14 +214,14 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	push_back(vec);
     }
 
-    DataTypeRef &paramtype = *((DataTypeRef *)(*psf->sweeps)[0]);
+    DataTypeRef &paramtype = *((DataTypeRef *)psf->get_sweep_section()[0]);
 
-    if(paramvalues == NULL)
-	paramvalues = paramtype.new_vector();
+    if(m_paramvalues == NULL)
+	m_paramvalues = paramtype.new_vector();
 
-    int paramstartidx = paramvalues->size();
+    int paramstartidx = m_paramvalues->size();
 
-    paramvalues->resize(paramstartidx + *n);
+    m_paramvalues->resize(paramstartidx + *n);
 
     for(int i=0; i < *n; i++) {
 	const char *pointstartbuf = buf;
@@ -233,7 +233,7 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
     
 	assert(paramtypeid == paramtype.get_id());
 
-	buf += paramtype.deserialize_data(paramvalues->ptr_at(paramstartidx + i), buf);
+	buf += paramtype.deserialize_data(m_paramvalues->ptr_at(paramstartidx + i), buf);
 
 	const char *valuebuf = buf;
 
@@ -241,11 +241,11 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	for(Filter::const_iterator j=filter.begin(); j != filter.end(); j++, k++) {
 	    const DataTypeRef *trace = dynamic_cast<const DataTypeRef *>(*j);
 
-	    buf = valuebuf + psf->sweepvalues->valueoffset(trace->get_id());
+	    buf = valuebuf + psf->get_value_section_sweep().valueoffset(trace->get_id());
 
 	    trace->deserialize_data(this->at(k)->ptr_at(i), buf);
 	}
-	buf = valuebuf + 8 * psf->traces->size() + psf->sweepvalues->valuesize();
+	buf = valuebuf + 8 * psf->get_trace_section().size() + psf->get_value_section_sweep().valuesize();
     }
 
     return buf - startbuf;
@@ -254,16 +254,16 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 
 template<class T>
 int SweepValueIterator<T>::deserialize() {
-    if((buf == NULL) || (psf == NULL) || (filter == NULL))
+    if((m_buf == NULL) || (m_psf == NULL) || (m_filter == NULL))
 	return 0;
     
-    int chunkid = GET_INT32(buf);
+    int chunkid = GET_INT32(m_buf);
 
     int n = 1;
     int windowoffset = 0;
 
     if(chunkid != CHUNKID_VALUESECTIONEND)
-	return v->deserialize(buf, &n, windowoffset, psf, *filter);
+	return m_v->deserialize(m_buf, &n, windowoffset, m_psf, *m_filter);
     else
 	return 0;
 }

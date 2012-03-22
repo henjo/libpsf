@@ -9,27 +9,27 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-PSFFile::PSFFile(std::string _filename) : 
-    header(NULL), types(NULL), sweeps(NULL), 
-    traces(NULL), sweepvalues(NULL), nonsweepvalues(NULL) {
+PSFFile::PSFFile(std::string filename) : 
+    m_header(NULL), m_types(NULL), m_sweeps(NULL), 
+    m_traces(NULL), m_sweepvalues(NULL), m_nonsweepvalues(NULL) {
 
-    filename = _filename;
-    fd = -1;
+    m_filename = filename;
+    m_fd = -1;
 }
 
 PSFFile::~PSFFile() {
-    if(header)
-	delete(header);
-    if(types)
-	delete(types);
-    if(sweeps)
-	delete(sweeps);
-    if(traces)
-	delete(traces);
-    if(sweepvalues)
-	delete(sweepvalues);
-    if(nonsweepvalues)
-	delete(nonsweepvalues);
+    if(m_header)
+	delete(m_header);
+    if(m_types)
+	delete(m_types);
+    if(m_sweeps)
+	delete(m_sweeps);
+    if(m_traces)
+	delete(m_traces);
+    if(m_sweepvalues)
+	delete(m_sweepvalues);
+    if(m_nonsweepvalues)
+	delete(m_nonsweepvalues);
     close();
 }
 
@@ -61,71 +61,71 @@ void PSFFile::deserialize(const char *buf, int size) {
     }
     sections[section.n].size = size - section.offset;
 
-    header = new HeaderSection();
-    header->deserialize(buf + sections[SECTION_HEADER].offset, sections[SECTION_HEADER].offset);
+    m_header = new HeaderSection();
+    m_header->deserialize(buf + sections[SECTION_HEADER].offset, sections[SECTION_HEADER].offset);
 
     // Read types
     if (sections.find(SECTION_TYPE) != sections.end()) {
-	types = new TypeSection();
-	types->deserialize(buf + sections[SECTION_TYPE].offset, sections[SECTION_TYPE].offset);
+	m_types = new TypeSection();
+	m_types->deserialize(buf + sections[SECTION_TYPE].offset, sections[SECTION_TYPE].offset);
     }
 
     // Read sweeps
     if (sections.find(SECTION_SWEEP) != sections.end()) {	
-	sweeps = new SweepSection(this);
-	sweeps->deserialize(buf + sections[SECTION_SWEEP].offset, sections[SECTION_SWEEP].offset);
+	m_sweeps = new SweepSection(this);
+	m_sweeps->deserialize(buf + sections[SECTION_SWEEP].offset, sections[SECTION_SWEEP].offset);
     }
 
     // Read traces
     if (sections.find(SECTION_TRACE) != sections.end()) {	
-	traces = new TraceSection(this);
-	traces->deserialize(buf + sections[SECTION_TRACE].offset, sections[SECTION_TRACE].offset);
+	m_traces = new TraceSection(this);
+	m_traces->deserialize(buf + sections[SECTION_TRACE].offset, sections[SECTION_TRACE].offset);
     }
 
     // Read values
     if (sections.find(SECTION_VALUE) != sections.end()) {	
-	if(sweeps != NULL) {
-	    sweepvalues = new ValueSectionSweep(this);
-	    sweepvalues->deserialize(buf + sections[SECTION_VALUE].offset, sections[SECTION_VALUE].offset);
+	if(m_sweeps != NULL) {
+	    m_sweepvalues = new ValueSectionSweep(this);
+	    m_sweepvalues->deserialize(buf + sections[SECTION_VALUE].offset, sections[SECTION_VALUE].offset);
 	} else {
-	    nonsweepvalues = new ValueSectionNonSweep(this);
-	    nonsweepvalues->deserialize(buf + sections[SECTION_VALUE].offset, sections[SECTION_VALUE].offset);
+	    m_nonsweepvalues = new ValueSectionNonSweep(this);
+	    m_nonsweepvalues->deserialize(buf + sections[SECTION_VALUE].offset, sections[SECTION_VALUE].offset);
 	}
     }
 
 }
 
 void PSFFile::open() {
-    fd = ::open(filename.c_str(), O_RDONLY);
+    m_fd = ::open(m_filename.c_str(), O_RDONLY);
   
-    if (fd == -1)
+    if (m_fd == -1)
 	throw FileOpenError();
   
-    size = lseek(fd, 0, SEEK_END);
+    m_size = lseek(m_fd, 0, SEEK_END);
   
-    buffer = (char *)mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+    m_buffer = (char *)mmap(0, m_size, PROT_READ, MAP_SHARED, m_fd, 0);
   
     if(validate())
-	deserialize((const char *)buffer, size);
+	deserialize((const char *)m_buffer, m_size);
     else
 	throw InvalidFileError();
 }
 
 void PSFFile::close() {
-    int rval;
-
-    munmap((void*) buffer, size);
+    munmap((void*) m_buffer, m_size);
     
-    if(fd != -1) {
-	rval = ::close(fd);
+    if(m_fd != -1) {
+	int rval = ::close(m_fd);
+
 	if (rval == -1)
 	    throw FileCloseError();
-	fd = -1;
+
+	m_fd = -1;
     }
 }
 
 bool PSFFile::validate() const {
-    std::ifstream fstr(filename.c_str());
+    std::ifstream fstr(m_filename.c_str());
 	
     fstr.seekg(-12, std::ios::end);
 
@@ -139,39 +139,39 @@ bool PSFFile::validate() const {
 
 
 NameList PSFFile::get_param_names() const {
-    if (sweeps != NULL)
-	return sweeps->get_names();
+    if (m_sweeps != NULL)
+	return m_sweeps->get_names();
     else
 	return NameList();
 }
 
 PSFVector* PSFFile::get_param_values() const {
-    if (sweepvalues != NULL) 
-	return sweepvalues->get_param_values();
+    if (m_sweepvalues != NULL) 
+	return m_sweepvalues->get_param_values();
     else
 	return NULL;
 }
 
 PSFVector* PSFFile::get_values(std::string name) const {
-    if(sweepvalues)
-	return sweepvalues->get_values(name);
+    if(m_sweepvalues)
+	return m_sweepvalues->get_values(name);
     else
 	return NULL;
 }	
 
 PropertyMap PSFFile::get_value_properties(std::string name) const {
-    return nonsweepvalues->get_value_properties(name);
+    return m_nonsweepvalues->get_value_properties(name);
 }
 
 const PSFScalar& PSFFile::get_value(std::string name) const {
-    if(nonsweepvalues)
-	return nonsweepvalues->get_value(name);
+    if(m_nonsweepvalues)
+	return m_nonsweepvalues->get_value(name);
 }
 
 NameList PSFFile::get_names() const {
-    if(traces) {
-	return traces->get_names();
-    } else if(nonsweepvalues) {
-	return nonsweepvalues->get_names();
+    if(m_traces) {
+	return m_traces->get_names();
+    } else if(m_nonsweepvalues) {
+	return m_nonsweepvalues->get_names();
     }
 }

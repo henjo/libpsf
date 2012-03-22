@@ -42,7 +42,7 @@ int NonSweepValue::deserialize(const char *buf) {
     buf += name.deserialize(buf);	
     valuetypeid = GET_INT32(buf); buf+=4;
     
-    const DataTypeDef& def = psf->types->get_typedef(valuetypeid);
+    const DataTypeDef& def = psf->get_type_section().get_typedef(valuetypeid);
     value = def.new_scalar();
     
     buf += def.deserialize_data(value->ptr(), buf);

@@ -18,15 +18,15 @@ Property::Property(Property const &x) {
 int Property::deserialize(const char *buf) {
     const char *startbuf = buf;
 
-    chunktype = GET_INT32(buf);
+    m_chunktype = GET_INT32(buf);
     buf += 4;
 
-    if(!ischunk(chunktype))
-	throw IncorrectChunk(chunktype);
+    if(!ischunk(m_chunktype))
+	throw IncorrectChunk(m_chunktype);
 
     buf += name.deserialize(buf);
 
-    switch(chunktype) {
+    switch(m_chunktype) {
     case 33:
 	value = new PSFStringScalar;
 	buf += value->deserialize(buf);

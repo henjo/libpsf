@@ -124,7 +124,7 @@ PSFVector *DataTypeDef::new_vector() const {
 //
 
 const DataTypeDef& DataTypeRef::get_def() const { 	
-    return dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid)); 
+    return dynamic_cast<const DataTypeDef&>(m_psf->get_type_section().get_child(m_datatypeid)); 
 }	
 
 int DataTypeRef::deserialize(const char *buf) {	
@@ -132,10 +132,10 @@ int DataTypeRef::deserialize(const char *buf) {
 
     buf += Chunk::deserialize(buf);
 	
-    id = GET_INT32(buf); buf+=4;
-    buf += name.deserialize(buf);
+    m_id = GET_INT32(buf); buf+=4;
+    buf += m_name.deserialize(buf);
 
-    datatypeid = GET_INT32(buf); buf+=4;
+    m_datatypeid = GET_INT32(buf); buf+=4;
 
     // Read optional properties
     while(true) {  	
@@ -144,7 +144,7 @@ int DataTypeRef::deserialize(const char *buf) {
 	if(Property::ischunk(chunktype)) {
 	    Property prop;
 	    buf += prop.deserialize(buf);
-	    properties.push_back(prop);
+	    m_properties.push_back(prop);
 	} else
 	    break;
     }
@@ -153,17 +153,17 @@ int DataTypeRef::deserialize(const char *buf) {
 }
 
 void * DataTypeRef::new_dataobject() const {
-    const DataTypeDef &def = dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid));
+    const DataTypeDef &def = dynamic_cast<const DataTypeDef&>(m_psf->get_type_section().get_child(m_datatypeid));
     return def.new_dataobject();
 }
 
 PSFVector * DataTypeRef::new_vector() const {
-    const DataTypeDef &def = dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid));
+    const DataTypeDef &def = dynamic_cast<const DataTypeDef&>(m_psf->get_type_section().get_child(m_datatypeid));
     return def.new_vector();
 }
 
 const DataTypeDef& DataTypeRef::get_datatype() const { 
-    return dynamic_cast<const DataTypeDef&>(psf->types->get_child(datatypeid)); 
+    return dynamic_cast<const DataTypeDef&>(m_psf->get_type_section().get_child(m_datatypeid)); 
 }
 
 int DataTypeRef::datasize() const {
