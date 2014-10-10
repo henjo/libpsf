@@ -153,6 +153,7 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
     const char *startbuf = buf;
 
     int windowsize = *psf->get_header_property("PSF window size");
+    int ntraces    = *psf->get_header_property("PSF traces");
 
     // Create parameter vector
     DataTypeRef &paramtype = *((DataTypeRef *)psf->get_sweep_section()[0]);
@@ -172,21 +173,20 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	buf += Chunk::deserialize(buf);
     
 	int tmp = GET_INT32(buf);
-	int windowleft = tmp >> 16;
-	int n = tmp & 0xffff;
+	int windowleft = tmp >> 16; 
+	int n = tmp & 0xffff;       // Number of data points in window
 
 	buf += 4;
 	windowoffset += 4;
     
+	// Deserialize parameter values from file to parameter vector (m_paramvalues)
 	int pwinstart = m_paramvalues->size();
 	m_paramvalues->resize(m_paramvalues->size() + n);
 	for(int j=0; j < n; j++)
 	    buf += paramtype.deserialize_data(m_paramvalues->ptr_at(pwinstart + j), buf);
 
-	const char *valuebuf = buf;
-	
-	const_iterator idatavec = begin();
-
+	const char *valuebuf = buf;        // Save start of trace values pointer in buffer
+	const_iterator idatavec = begin(); // Init iterator of destination trace vectors
 	for(Filter::const_iterator j=filter.begin(); j != filter.end(); j++, idatavec++) {
 	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**j);
 
@@ -197,7 +197,9 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	    for(int k=0; k < n; k++)
 		buf += typeref.deserialize_data((*idatavec)->ptr_at(i+k), buf);
 	}
-	
+
+	// Advance buffer pointer to end of trace values
+	buf = valuebuf + ntraces * windowsize;
 	i += n;
     }
     return buf - startbuf;
