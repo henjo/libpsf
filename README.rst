@@ -9,7 +9,7 @@ Install prerequisits
 On a debian based system you can run the following to install the 
 packages needed to build libpsf:
 
-sudo aptitude install autoconf automake libtool libboost-all-dev python-numpy-dev 
+sudo apt-get install autoconf automake libtool libboost-all-dev python-numpy-dev 
 
 Build and install
 -----------------
@@ -30,7 +30,7 @@ Running the tests
 -----------------
 Install cppunit, then compile and run the tests in the test dir::
 
-    sudo aptitiude install libcppunit-dev
+    sudo apt-get install libcppunit-dev
     cd test
     make
     ./test_psfdataset
