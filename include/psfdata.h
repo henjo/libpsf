@@ -157,8 +157,8 @@ class PSFVectorT : public PSFVector, public std::vector<T> {
     PSFVectorT(const T& _init) : init(_init) {};
     void extend(const PSFVector *vec) {
 	const PSFVectorT& tvec = dynamic_cast<const PSFVectorT &>(*vec);
-	reserve(std::vector<T>::size() + distance(tvec.begin(), tvec.end()));
-	insert(std::vector<T>::end(), tvec.begin(), tvec.end());
+	this->reserve(std::vector<T>::size() + distance(tvec.begin(), tvec.end()));
+	this->insert(std::vector<T>::end(), tvec.begin(), tvec.end());
     }
     
     void *ptr_at(int i) { return &std::vector<T>::at(i); }
