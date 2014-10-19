@@ -18,232 +18,243 @@
 #include <numpy/arrayobject.h>
 
 using namespace boost::python;
+namespace py = boost::python;
+
+template<class T>
+struct VecToList
+{
+  static PyObject* convert(const std::vector<T>& vec)
+  {
+    boost::python::list* l = new boost::python::list();
+    for(size_t i = 0; i < vec.size(); i++)
+      (*l).append(vec[i]);
+
+    return l->ptr();
+  }
+};
 
 struct Struct_to_python {
-    static PyObject *convert(const Struct& s);
+  static PyObject *convert(const Struct& s);
 };
 
 PyObject *psfscalar_to_python(const PSFScalar *scalar) {
-    PyObject *result = NULL;
-    if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar))
-	result = PyFloat_FromDouble(p->value);
-    else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar))
-	result = PyInt_FromLong((int)*p);
-    else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar))
-	result = PyString_FromString(p->tostring().c_str());
-    else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar))
-	result = Struct_to_python::convert(p->value);
-    else
-	throw NotImplemented();
+  PyObject *result = NULL;
+  if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar))
+    result = PyFloat_FromDouble(p->value);
+  else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar))
+    result = PyInt_FromLong((int)*p);
+  else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar))
+    result = PyString_FromString(p->tostring().c_str());
+  else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar))
+    result = Struct_to_python::convert(p->value);
+  else
+    throw NotImplemented();
     
-    return result;
+  return result;
 }
 
 struct PSFScalar_to_python {
-    static PyObject *convert(const PSFScalar *scalar) {
-	PyObject *result = psfscalar_to_python(scalar);
-	delete scalar;	
-	return result;
-    }
+  static PyObject *convert(const PSFScalar *scalar) {
+    PyObject *result = psfscalar_to_python(scalar);
+    delete scalar;	
+    return result;
+  }
 };
 
 struct PropertyMap_to_python {
-    static PyObject *convert(const PropertyMap& propmap) {
-	PyObject *dict = PyDict_New();
+  static PyObject *convert(const PropertyMap& propmap) {
+    PyObject *dict = PyDict_New();
 
-	for(PropertyMap::const_iterator i = propmap.begin(); i != propmap.end(); i++)
-	    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
-			   psfscalar_to_python(i->second));	
-	return dict;
-    }
+    for(PropertyMap::const_iterator i = propmap.begin(); i != propmap.end(); i++)
+      PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+		     psfscalar_to_python(i->second));	
+    return dict;
+  }
 };
 
 PyObject *Struct_to_python::convert(const Struct& s) {
-    PyObject *dict = PyDict_New();
+  PyObject *dict = PyDict_New();
     
-    for(Struct::const_iterator i = s.begin(); i != s.end(); i++) {
-	PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
-		       psfscalar_to_python(i->second));
-    }	
+  for(Struct::const_iterator i = s.begin(); i != s.end(); i++) {
+    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+		   psfscalar_to_python(i->second));
+  }	
     
-    return dict;
+  return dict;
 }
 
 PyObject *create_numpy_vector(int n, int type, void *data, bool copy) {
-    npy_intp dims[1] = { n };
+  npy_intp dims[1] = { n };
 
-    if(copy) {
-	PyObject *result = PyArray_SimpleNew(1, dims, type);
-	void *arr_data = PyArray_DATA((PyArrayObject*)result);
-	memcpy(arr_data, data, PyArray_ITEMSIZE((PyArrayObject*) result) * n);
-	return result;
-    } else 
-	return PyArray_SimpleNewFromData(1, dims, type, data);
+  if(copy) {
+    PyObject *result = PyArray_SimpleNew(1, dims, type);
+    void *arr_data = PyArray_DATA((PyArrayObject*)result);
+    memcpy(arr_data, data, PyArray_ITEMSIZE((PyArrayObject*) result) * n);
+    return result;
+  } else 
+    return PyArray_SimpleNewFromData(1, dims, type, data);
 }
 
 PyObject *psfvector_to_numpyarray(PSFVector *vec, bool copy=false) {
-    PyObject *result = NULL;
+  PyObject *result = NULL;
 
-    if (PSFDoubleVector *f64v = dynamic_cast<PSFDoubleVector *>(vec)) {
-	// Create numpy array
-	result = create_numpy_vector(f64v->size(), PyArray_DOUBLE, &f64v->at(0), copy);
-    } else if (PSFComplexDoubleVector *cf64v = 
-	       dynamic_cast<PSFComplexDoubleVector *>(vec)) {
-	// Create numpy array
-	result = create_numpy_vector(cf64v->size(), PyArray_CDOUBLE, &cf64v->at(0), copy);
-    } else if (StructVector *sv = dynamic_cast<StructVector *>(vec)) {
-	// Create numpy array
-	npy_intp dims[1] = { sv->size() };
-	result = PyArray_SimpleNew(1, dims, PyArray_OBJECT);
+  if (PSFDoubleVector *f64v = dynamic_cast<PSFDoubleVector *>(vec)) {
+    // Create numpy array
+    result = create_numpy_vector(f64v->size(), PyArray_DOUBLE, &f64v->at(0), copy);
+  } else if (PSFComplexDoubleVector *cf64v = 
+	     dynamic_cast<PSFComplexDoubleVector *>(vec)) {
+    // Create numpy array
+    result = create_numpy_vector(cf64v->size(), PyArray_CDOUBLE, &cf64v->at(0), copy);
+  } else if (StructVector *sv = dynamic_cast<StructVector *>(vec)) {
+    // Create numpy array
+    npy_intp dims[1] = { sv->size() };
+    result = PyArray_SimpleNew(1, dims, PyArray_OBJECT);
 	    
-	PyObject **ptr = (PyObject **) PyArray_DATA(result);
-	for(unsigned int i=0; i < sv->size(); i++)
-	    ptr[i] = Struct_to_python::convert(sv->at(i));
-
-	// Make source vector is deleted
-	copy = true;
-    } else if (vec == NULL) {
-	result = Py_None;
-    }
+    PyObject **ptr = (PyObject **) PyArray_DATA(result);
+    for(unsigned int i=0; i < sv->size(); i++)
+      ptr[i] = Struct_to_python::convert(sv->at(i));
+      
+    // Make source vector is deleted
+    copy = true;
+  } else if (vec == NULL) {
+    result = Py_None;
+  }
 	
-    if(copy && (vec != NULL))
-	delete vec;
+  if(copy && (vec != NULL))
+    delete vec;
     
-    return result;
+  return result;
 }
 
 PyObject *vectorstruct_to_python(VectorStruct *vs) {
-    // Create dictionary of numpy arrays
-    PyObject *dict = PyDict_New();
+  // Create dictionary of numpy arrays
+  PyObject *dict = PyDict_New();
 		
-    for(VectorStruct::const_iterator i = vs->begin(); i != vs->end(); i++)
-	PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
-		       psfvector_to_numpyarray(i->second, true));	
-    return dict;
+  for(VectorStruct::const_iterator i = vs->begin(); i != vs->end(); i++)
+    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+		   psfvector_to_numpyarray(i->second, true));	
+  return dict;
 }
 
 struct PSFVector_to_numpyarray {	
-    static PyObject *convert(PSFVector *vec) {
-	return psfvector_to_numpyarray(vec);
-    }
+  static PyObject *convert(PSFVector *vec) {
+    return psfvector_to_numpyarray(vec);
+  }
 };
 
 struct PSFBase_to_numpyarray {	
-    static PyObject *convert(PSFBase *d) {
-	const PSFScalar *scalar = dynamic_cast<const PSFScalar *>(d);
-	if (scalar != NULL)
-	    return psfscalar_to_python(scalar);
-	else {	
-	    PSFVector *vector = dynamic_cast<PSFVector *>(d);
-	    if (vector != NULL)
-		return psfvector_to_numpyarray(vector, true);	
-	    else {
-		VectorStruct *vs = dynamic_cast<VectorStruct *>(d);
+  static PyObject *convert(PSFBase *d) {
+    const PSFScalar *scalar = dynamic_cast<const PSFScalar *>(d);
+    if (scalar != NULL)
+      return psfscalar_to_python(scalar);
+    else {	
+      PSFVector *vector = dynamic_cast<PSFVector *>(d);
+      if (vector != NULL)
+	return psfvector_to_numpyarray(vector, true);	
+      else {
+	VectorStruct *vs = dynamic_cast<VectorStruct *>(d);
 
-		if(vs != NULL)
-		    return vectorstruct_to_python(vs);
-		else
-		    return Py_None;
-	    }
-	}
+	if(vs != NULL)
+	  return vectorstruct_to_python(vs);
+	else
+	  return Py_None;
+      }
     }
+  }
 };
 
 // Exception translators    
 void translate_exception(IncorrectChunk const& e) {
-    std::stringstream msg; msg << "Incorrect chunk " << e.chunktype;
-    PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
+  std::stringstream msg; msg << "Incorrect chunk " << e.chunktype;
+  PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
 }
 
 void translate_exception_unknown_type(UnknownType const& e) {
-    std::stringstream msg; msg << "Unknown type " << e.type_id;
-    PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
+  std::stringstream msg; msg << "Unknown type " << e.type_id;
+  PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
 }
 
 void translate_exception_notfound(NotFound const& e) {
-    std::stringstream msg; msg << "Signal not found";
-    PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
+  std::stringstream msg; msg << "Signal not found";
+  PyErr_SetString(PyExc_RuntimeError, msg.str().c_str());
 }
 
 void translate_exception_fileopenerror(FileOpenError const& e) {
-    std::stringstream msg; msg << "File open error";
-    PyErr_SetString(PyExc_IOError, msg.str().c_str());
+  std::stringstream msg; msg << "File open error";
+  PyErr_SetString(PyExc_IOError, msg.str().c_str());
 }
 
 
 BOOST_PYTHON_MODULE(libpsf)
 { 
-    import_array();
-    to_python_converter<PropertyMap, PropertyMap_to_python>();
-    to_python_converter<PSFBase *, PSFBase_to_numpyarray>();
-    to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
-    to_python_converter<const PSFScalar *, PSFScalar_to_python>();
-    to_python_converter<Struct, Struct_to_python>();
-    
-    class_< std::vector<std::string> >("StringVec")
-        .def(vector_indexing_suite<std::vector<std::string> >())
-        ;
+  import_array();
+  to_python_converter<PropertyMap, PropertyMap_to_python>();
+  to_python_converter<PSFBase *, PSFBase_to_numpyarray>();
+  to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
+  to_python_converter<const PSFScalar *, PSFScalar_to_python>();
+  to_python_converter<Struct, Struct_to_python>();
+  to_python_converter<std::vector<std::string,class std::allocator<std::string> >, VecToList<std::string> >();
 
-    bool show_user_defined = true;
-    bool show_cpp_signatures = false;
-    bool show_py_signatures = true;
-    docstring_options doc_options(show_user_defined, show_py_signatures, show_cpp_signatures);
+  bool show_user_defined = true;
+  bool show_cpp_signatures = false;
+  bool show_py_signatures = true;
+  docstring_options doc_options(show_user_defined, show_py_signatures, show_cpp_signatures);
 
-    class_<PSFDataSet>("PSFDataSet", "Open a psf results file.",
-                       init<std::string>((arg("self"), arg("filename"))))
-        .def("get_nsweeps",
-             &PSFDataSet::get_nsweeps,
-             (arg("self")),
-             "Return the number of sweeps")
-        .def("get_sweep_npoints",
-             &PSFDataSet::get_sweep_npoints,
-             (arg("self")),
-             "Return the number of points in the sweep")
-        .def("get_signal_names",
-             &PSFDataSet::get_signal_names,
-             (arg("self")),
-             "Return a list of signal names")
-        .def("get_sweep_param_names",
-             &PSFDataSet::get_sweep_param_names,
-             (arg("self")),
-             "Parameter that has been swept")
-        .def("get_sweep_values",
-             &PSFDataSet::get_sweep_values,
-             (arg("self")),
-             "numpy array of swept values",
-             return_value_policy<return_by_value>())
-        .def("get_signal",
-             &PSFDataSet::get_signal,
-             (arg("self"), arg("signal")),
-             "numpy array of signal values",
-             return_value_policy<return_by_value>())
-        .def("get_header_properties",
-             &PSFDataSet::get_header_properties,
-             (arg("self")),
-             "Dict of header properties and values",
-             return_value_policy<return_by_value>())
-        .def("get_signal_properties",
-             &PSFDataSet::get_signal_properties,
-             (arg("self"), arg("signal")),
-             "Properties of a non swept signal",
-             return_value_policy<return_by_value>())
-        .def("is_swept",
-             &PSFDataSet::is_swept,
-             (arg("self")),
-             "Is the data swept")
-        .def("close",                                 
-	     &PSFDataSet::close,
-	     (arg("self")),
-	     "Close PSF data set")
-        .add_property("invertstruct",
-                      &PSFDataSet::get_invertstruct,
-                      &PSFDataSet::set_invertstruct)
-        ;
+  class_<PSFDataSet>("PSFDataSet", "Open a psf results file.",
+		     init<std::string>((arg("self"), arg("filename"))))
+    .def("get_nsweeps",
+	 &PSFDataSet::get_nsweeps,
+	 (arg("self")),
+	 "Return the number of sweeps")
+    .def("get_sweep_npoints",
+	 &PSFDataSet::get_sweep_npoints,
+	 (arg("self")),
+	 "Return the number of points in the sweep")
+    .def("get_signal_names",
+	 &PSFDataSet::get_signal_names,
+	 (arg("self")),
+	 "Return a list of signal names")
+    .def("get_sweep_param_names",
+	 &PSFDataSet::get_sweep_param_names,
+	 (arg("self")),
+	 "Parameter that has been swept")
+    .def("get_sweep_values",
+	 &PSFDataSet::get_sweep_values,
+	 (arg("self")),
+	 "numpy array of swept values",
+	 return_value_policy<return_by_value>())
+    .def("get_signal",
+	 &PSFDataSet::get_signal,
+	 (arg("self"), arg("signal")),
+	 "numpy array of signal values",
+	 return_value_policy<return_by_value>())
+    .def("get_header_properties",
+	 &PSFDataSet::get_header_properties,
+	 (arg("self")),
+	 "Dict of header properties and values",
+	 return_value_policy<return_by_value>())
+    .def("get_signal_properties",
+	 &PSFDataSet::get_signal_properties,
+	 (arg("self"), arg("signal")),
+	 "Properties of a non swept signal",
+	 return_value_policy<return_by_value>())
+    .def("is_swept",
+	 &PSFDataSet::is_swept,
+	 (arg("self")),
+	 "Is the data swept")
+    .def("close",                                 
+	 &PSFDataSet::close,
+	 (arg("self")),
+	 "Close PSF data set")
+    .add_property("invertstruct",
+		  &PSFDataSet::get_invertstruct,
+		  &PSFDataSet::set_invertstruct)
+    ;
     
-    class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());
-    //    class_<NotFound> incorrectChunkClass("NotFound", init<>());
-    boost::python::register_exception_translator<IncorrectChunk>(&translate_exception);
-    boost::python::register_exception_translator<NotFound>(&translate_exception_notfound);
-    boost::python::register_exception_translator<FileOpenError>(&translate_exception_fileopenerror);
-    boost::python::register_exception_translator<UnknownType>(&translate_exception_unknown_type);
+  class_<IncorrectChunk> incorrectChunkClass("IncorrectChunk", init<int>());
+  //    class_<NotFound> incorrectChunkClass("NotFound", init<>());
+  boost::python::register_exception_translator<IncorrectChunk>(&translate_exception);
+  boost::python::register_exception_translator<NotFound>(&translate_exception_notfound);
+  boost::python::register_exception_translator<FileOpenError>(&translate_exception_fileopenerror);
+  boost::python::register_exception_translator<UnknownType>(&translate_exception_unknown_type);
 }
