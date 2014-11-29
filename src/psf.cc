@@ -37,13 +37,13 @@ const std::vector<std::string> PSFDataSet::get_signal_names() const {
 int PSFDataSet::get_nsweeps() const {
     verify_open();
 
-    return (int) *m_psf->get_header_property("PSF sweeps");
+    return (int) m_psf->get_header_properties().find("PSF sweeps");
 }
 
 int PSFDataSet::get_sweep_npoints() const {
     verify_open();
 
-    return (int) *m_psf->get_header_property("PSF sweep points");
+    return (int) m_psf->get_header_properties().find("PSF sweep points");
 }
 
 const std::vector<std::string> PSFDataSet::get_sweep_param_names() const {
@@ -91,22 +91,22 @@ const PSFScalar& PSFDataSet::get_signal_scalar(std::string name) const {
     return m_psf->get_value(name);
 }
 
-PropertyMap PSFDataSet::get_signal_properties(std::string name) const {
+const PropertyMap & PSFDataSet::get_signal_properties(std::string name) const {
     verify_open();
 
-    return m_psf->get_value_properties(name);
+    return m_psf->get_value_properties(name).get_propmap();
 }
 
-const PropertyMap& PSFDataSet::get_header_properties() const {
+const PropertyMap & PSFDataSet::get_header_properties() const {
     verify_open();
 
-    return m_psf->get_header_properties();
+    return m_psf->get_header_properties().get_propmap();
 }
 
 bool PSFDataSet::is_swept() const {
     verify_open();
 
-    const int nsweeps = *(m_psf->get_header_properties().find("PSF sweeps")->second);
+    const int nsweeps = m_psf->get_header_properties().find("PSF sweeps");
 
     return nsweeps > 0;
 }

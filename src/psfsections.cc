@@ -17,18 +17,11 @@ int HeaderSection::deserialize(const char *buf, int abspos) {
     int n = SimpleContainer::deserialize(buf, abspos);
 
     for(Container::const_iterator ichild=begin(); ichild !=end(); ichild++) {
-	Property *prop = (Property *)*ichild;
-	properties[prop->get_name()] = prop->get_value();
+      const Property *prop = dynamic_cast<const Property *>(*ichild);
+      m_properties.append_prop(*prop);
     }
 
     return n;
-}
-
-const PSFScalar *HeaderSection::get_property(std::string key) const {
-    if(properties.find(key) == properties.end())
-	return NULL;
-    else
-	return properties.find(key)->second;
 }
 
 Chunk *TypeSection::child_factory(int chunktype) const {

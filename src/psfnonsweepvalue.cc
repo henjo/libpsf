@@ -18,19 +18,14 @@ const PSFScalar& ValueSectionNonSweep::get_value(std::string name) const {
     return dynamic_cast<const NonSweepValue &>(get_child(name)).get_value();
 }
 
-PropertyMap ValueSectionNonSweep::get_value_properties(const std::string name) const {
-    const PropertyList& plist = dynamic_cast<const NonSweepValue &>(get_child(name)).get_properties();
-    PropertyMap pmap;
-
-    for(PropertyList::const_iterator i = plist.begin(); i != plist.end(); i++)
-	pmap[i->get_name()] = i->get_value();
-
-    return pmap;
+const PropertyBlock & ValueSectionNonSweep::get_value_properties(const std::string name) const {
+  const NonSweepValue &child = dynamic_cast<const NonSweepValue &>(get_child(name));
+  return child.get_properties();
 }
 
 NonSweepValue::~NonSweepValue() {
-    if(value)
-	delete(value);
+    if(m_value)
+	delete(m_value);
 }
 
 int NonSweepValue::deserialize(const char *buf) {
@@ -38,27 +33,16 @@ int NonSweepValue::deserialize(const char *buf) {
 
     buf += Chunk::deserialize(buf);
    
-    id = GET_INT32(buf); buf+=4;
-    buf += name.deserialize(buf);	
-    valuetypeid = GET_INT32(buf); buf+=4;
+    m_id = GET_INT32(buf); buf+=4;
+    buf += m_name.deserialize(buf);	
+    m_valuetypeid = GET_INT32(buf); buf+=4;
     
-    const DataTypeDef& def = psf->get_type_section().get_typedef(valuetypeid);
-    value = def.new_scalar();
+    const DataTypeDef& def = m_psf->get_type_section().get_typedef(m_valuetypeid);
+    m_value = def.new_scalar();
     
-    buf += def.deserialize_data(value->ptr(), buf);
-    
-    // Read optional properties
-    while(true) {  	
-	int chunktype = GET_INT32(buf);
+    buf += def.deserialize_data(m_value->ptr(), buf);
 
-	if(Property::ischunk(chunktype)) {
-	    Property prop;
-	    buf += prop.deserialize(buf);
-
-	    properties.push_back(prop);
-	} else
-	    break;
-    }
+    buf += m_propblock.deserialize(buf);
 
     return buf - startbuf;
 }

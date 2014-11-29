@@ -7,43 +7,59 @@
 ValueSectionSweep::ValueSectionSweep(PSFFile *psf) : m_psf(psf) {
     m_chunktype = ValueSectionSweep::type;
 
-    windowedsweep = (m_psf->get_header_property("PSF window size") != NULL);
+    windowedsweep = m_psf->get_header_properties().hasprop("PSF window size");
 
     m_valuebuf = endbuf = NULL;
 }
 
 void ValueSectionSweep::_create_valueoffsetmap(bool windowedsweep) {    
-    m_valuesize = 0;
-
-    int valueoffset = 0;
-    int child_datasize;
-
-    if (windowedsweep) {
-	int windowsize = *m_psf->get_header_property("PSF window size");
+  const DataTypeRef *ref = NULL;
+  Container::const_iterator itrace;
+  int valueoffset = 0;
+  int child_datasize;
+  
+  m_valuesize = 0;
+  m_ntraces = 0;
+  
+  if (windowedsweep) {
+    int windowsize = m_psf->get_header_properties().find("PSF window size");
 	
-	for(Container::const_iterator trace=m_psf->get_trace_section().begin(); trace != m_psf->get_trace_section().end(); trace++) {
-	    if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*trace)) 
-		child_datasize = groupdef->fill_offsetmap(m_offsetmap, windowsize, valueoffset);
-	    else
-		throw IncorrectChunk((*trace)->m_chunktype);
+    for(itrace = m_psf->get_trace_section().begin(); itrace != m_psf->get_trace_section().end(); itrace++) {
+      if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*itrace)) 
+	child_datasize = groupdef->fill_offsetmap(m_offsetmap, windowsize, valueoffset);
+      else
+	throw IncorrectChunk((*itrace)->m_chunktype);
 
-	    m_valuesize += child_datasize;
-	    valueoffset += child_datasize;
-	}
-    } else {
-	for(Container::const_iterator trace=m_psf->get_trace_section().begin(); trace != m_psf->get_trace_section().end(); trace++) {
-	    if(const DataTypeRef *ref = dynamic_cast<const DataTypeRef *>(*trace)) {
-		child_datasize = ref->get_datatype().datasize();
-		m_offsetmap[ref->get_id()] = valueoffset + 8;
-	    } else if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*trace))
-		child_datasize = groupdef->fill_offsetmap(m_offsetmap, 0, valueoffset + 8);
-	    else 
-		throw IncorrectChunk((*trace)->m_chunktype);
-
-	    m_valuesize += child_datasize;
-	    valueoffset += 8 + child_datasize;
-	}
+      m_valuesize += child_datasize;
+      valueoffset += child_datasize;
     }
+  } else {
+    for(itrace = m_psf->get_trace_section().begin(); itrace != m_psf->get_trace_section().end(); itrace++) {
+      ref = dynamic_cast<const DataTypeRef *>(*itrace);
+
+      if(NULL != ref) {
+	const DataTypeDef &datatypedef = ref->get_datatype();
+	
+	// In waveform families there is a data file that only contains sweep values.
+	// In this case there are no trace values in the value section, yet there
+	// is a trace in the trace section with the same datatypeid as in the sweep.
+	// Data types of sweeps have a property called "key" which is set to "sweep" which
+	// will be used to detect this problem to get a correct offset and child_datasize
+	std::string key = datatypedef.get_properties().find("key").tostring();
+	if ("sweep" == key)
+	  continue;
+
+	child_datasize = datatypedef.datasize();
+	m_offsetmap[ref->get_id()] = valueoffset + 8;
+      } else if(const GroupDef *groupdef = dynamic_cast<const GroupDef *>(*itrace))
+	child_datasize = groupdef->fill_offsetmap(m_offsetmap, 0, valueoffset + 8);
+      else 
+	throw IncorrectChunk((*itrace)->m_chunktype);
+      
+      m_valuesize += 8 + child_datasize;
+      valueoffset += 8 + child_datasize;
+    }
+  }
 }
 
 SweepValue* ValueSectionSweep::get_values(Filter &filter) const {
@@ -51,7 +67,7 @@ SweepValue* ValueSectionSweep::get_values(Filter &filter) const {
 
     SweepValue *value = new_value();
     
-    int n = *m_psf->get_header_property("PSF sweep points");
+    int n = m_psf->get_header_properties().find("PSF sweep points");
     
     int windowoffset = 0;
     value->deserialize(buf, &n, windowoffset, m_psf, filter);
@@ -112,7 +128,7 @@ int ValueSectionSweep::deserialize(const char *buf, int abspos) {
 };
 
 
-int ValueSectionSweep::valueoffset(int id) const {
+int ValueSectionSweep::get_valueoffset(int id) const {
     return m_offsetmap.find(id)->second;
 }
     
@@ -152,8 +168,8 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 				    Filter &filter) {
     const char *startbuf = buf;
 
-    int windowsize = *psf->get_header_property("PSF window size");
-    int ntraces    = *psf->get_header_property("PSF traces");
+    int windowsize = psf->get_header_properties().find("PSF window size");
+    int ntraces    = psf->get_header_properties().find("PSF traces");
 
     // Create parameter vector
     DataTypeRef &paramtype = *((DataTypeRef *)psf->get_sweep_section()[0]);
@@ -191,7 +207,7 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**j);
 
 	    // calculate buffer pointer
-	    buf = valuebuf +  psf->get_value_section_sweep().valueoffset((*j)->get_id()) +
+	    buf = valuebuf +  psf->get_value_section_sweep().get_valueoffset((*j)->get_id()) +
 		(windowsize - n * typeref.datasize());
 	    
 	    for(int k=0; k < n; k++)
@@ -207,6 +223,7 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
 
 int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSFFile *psf, Filter &filter) {
     const char *startbuf = buf;
+    const ValueSectionSweep &valuesection = psf->get_value_section_sweep();
 
     // Create data vectors
     for(ChildList::const_iterator j=filter.begin(); j != filter.end(); j++) {
@@ -243,11 +260,11 @@ int SweepValueSimple::deserialize(const char *buf, int *n, int windowoffset, PSF
 	for(Filter::const_iterator j=filter.begin(); j != filter.end(); j++, k++) {
 	    const DataTypeRef *trace = dynamic_cast<const DataTypeRef *>(*j);
 
-	    buf = valuebuf + psf->get_value_section_sweep().valueoffset(trace->get_id());
+	    buf = valuebuf + valuesection.get_valueoffset(trace->get_id());
 
 	    trace->deserialize_data(this->at(k)->ptr_at(i), buf);
 	}
-	buf = valuebuf + 8 * psf->get_trace_section().size() + psf->get_value_section_sweep().valuesize();
+	buf = valuebuf + valuesection.get_valuesize();
     }
 
     return buf - startbuf;

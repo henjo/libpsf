@@ -7,16 +7,16 @@ int GroupDef::deserialize(const char *buf) {
 
     buf += Chunk::deserialize(buf);
     
-    id = GET_INT32(buf); buf+=4;
+    m_id = GET_INT32(buf); buf+=4;
 
-    buf += name.deserialize(buf);
+    buf += m_name.deserialize(buf);
 
-    nchildren = GET_INT32(buf); buf+=4;
+    m_nchildren = GET_INT32(buf); buf+=4;
 
-    for(int i=0; i < nchildren; i++) {
+    for(int i=0; i < m_nchildren; i++) {
 	Chunk *chunk = deserialize_child(&buf);  
 	add_child(chunk);
-	namemap[chunk->get_name()] = i;
+	m_namemap[chunk->get_name()] = i;
     }
 
     _create_valueindexmap();
@@ -26,7 +26,7 @@ int GroupDef::deserialize(const char *buf) {
     
 Chunk* GroupDef::child_factory(int chunktype) const {
     if(DataTypeRef::ischunk(chunktype))
-	return new DataTypeRef(psf);
+	return new DataTypeRef(m_psf);
     else
 	throw IncorrectChunk(chunktype);
 }	
@@ -59,7 +59,7 @@ int GroupDef::fill_offsetmap(TraceIDOffsetMap& offsetmap, int windowsize, int st
 void GroupDef::_create_valueindexmap() {   
     int i=0;
     for(const_iterator iref=begin(); iref != end(); iref++, i++)
-	indexmap[(*iref)->get_id()] = i;
+	m_indexmap[(*iref)->get_id()] = i;
 }
 
 const Chunk & GroupDef::get_child(std::string name) const {
@@ -67,8 +67,8 @@ const Chunk & GroupDef::get_child(std::string name) const {
 }
 
 int GroupDef::get_child_index(std::string name) const {
-    NameIndexMap::const_iterator inameindex = namemap.find(name);
-    if (inameindex == namemap.end())
+    NameIndexMap::const_iterator inameindex = m_namemap.find(name);
+    if (inameindex == m_namemap.end())
 	throw NotFound();
     else
 	return inameindex->second;

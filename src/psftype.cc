@@ -7,8 +7,8 @@
 //
 
 DataTypeDef::~DataTypeDef() {
-    if(structdef)
-	delete(structdef);
+    if(m_structdef)
+	delete(m_structdef);
 }
 
 int DataTypeDef::deserialize(const char *buf) {
@@ -16,39 +16,29 @@ int DataTypeDef::deserialize(const char *buf) {
 
     buf += Chunk::deserialize(buf);
 
-    id = GET_INT32(buf); buf+=4;
+    m_id = GET_INT32(buf); buf+=4;
 
-    buf += name.deserialize(buf);
+    buf += m_name.deserialize(buf);
 	
     int arraytype = GET_INT32(buf); buf+=4;
-
-    datatypeid = GET_INT32(buf);
+    
+    m_datatypeid = GET_INT32(buf);
     buf += 4;
 
-    if(datatypeid == 16) {
-	structdef = new StructDef();
-	buf += structdef->deserialize(buf);
-	_datasize = structdef->datasize();
+    if(m_datatypeid == 16) {
+	m_structdef = new StructDef();
+	buf += m_structdef->deserialize(buf);
+	_datasize = m_structdef->datasize();
     } else
-	_datasize = psfdata_size(datatypeid);
+	_datasize = psfdata_size(m_datatypeid);
 
-    // Read optional properties
-    while(true) {  	
-	int chunktype = GET_INT32(buf);
-
-	if(Property::ischunk(chunktype)) {
-	    Property prop;
-	    buf += prop.deserialize(buf);
-	    properties.push_back(prop);
-	} else
-	    break;
-    }
+    buf += m_properties.deserialize(buf);
 
     return buf - startbuf;
 };
 
 void * DataTypeDef::new_dataobject() const {
-    switch(datatypeid) {
+    switch(m_datatypeid) {
     case TYPEID_INT8:
 	return new PSFInt8;
     case TYPEID_INT32:
@@ -56,14 +46,14 @@ void * DataTypeDef::new_dataobject() const {
     case TYPEID_DOUBLE:
 	return new PSFDouble;
     case TYPEID_STRUCT:
-	return structdef->new_dataobject();
+	return m_structdef->new_dataobject();
     default:
-	throw UnknownType(datatypeid);    
+	throw UnknownType(m_datatypeid);    
     }
 }
 
 int DataTypeDef::deserialize_data(void *data, const char *buf) const {
-    switch(datatypeid) {
+    switch(m_datatypeid) {
     case TYPEID_INT8:
 	*((PSFInt8 *)data) = *((int8_t *)buf+3);
 	return 4;
@@ -81,12 +71,12 @@ int DataTypeDef::deserialize_data(void *data, const char *buf) const {
     case TYPEID_STRUCT: 
 	return ((Struct *)data)->deserialize(buf);
     default:
-	throw UnknownType(datatypeid);    
+	throw UnknownType(m_datatypeid);    
     }
 }
 
 PSFScalar *DataTypeDef::new_scalar() const {
-    switch(datatypeid) {
+    switch(m_datatypeid) {
     case TYPEID_INT8:
 	return new PSFInt8Scalar();
     case TYPEID_INT32:
@@ -96,14 +86,14 @@ PSFScalar *DataTypeDef::new_scalar() const {
     case TYPEID_COMPLEXDOUBLE:
 	return new PSFComplexDoubleScalar();
     case TYPEID_STRUCT:
-	return new StructScalar(Struct(structdef));
+	return new StructScalar(Struct(m_structdef));
     default:
-	throw UnknownType(datatypeid);    
+      throw UnknownType(m_datatypeid);    
     }
 }
 
 PSFVector *DataTypeDef::new_vector() const {
-    switch(datatypeid) {
+    switch(m_datatypeid) {
     case TYPEID_INT8:
 	return new PSFInt8Vector();
     case TYPEID_INT32:
@@ -113,9 +103,9 @@ PSFVector *DataTypeDef::new_vector() const {
     case TYPEID_COMPLEXDOUBLE:
 	return new PSFComplexDoubleVector();
     case TYPEID_STRUCT:
-	return new StructVector(Struct(structdef));
+	return new StructVector(Struct(m_structdef));
     default:
-	throw UnknownType(datatypeid);    
+	throw UnknownType(m_datatypeid);    
     }
 }
 
@@ -137,17 +127,7 @@ int DataTypeRef::deserialize(const char *buf) {
 
     m_datatypeid = GET_INT32(buf); buf+=4;
 
-    // Read optional properties
-    while(true) {  	
-	int chunktype = GET_INT32(buf);
-
-	if(Property::ischunk(chunktype)) {
-	    Property prop;
-	    buf += prop.deserialize(buf);
-	    m_properties.push_back(prop);
-	} else
-	    break;
-    }
+    buf += m_properties.deserialize(buf);
 
     return buf - startbuf;
 }

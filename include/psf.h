@@ -36,6 +36,7 @@ class InvalidFileError: public std::exception {};
 class FileCloseError:   public std::exception {};
 class NotFound:         public std::exception {};
 class DataSetNotOpen:   public std::exception {};
+class PropertyNotFound: public std::exception {};
 
 #include "psfdata.h"
 
@@ -58,7 +59,7 @@ class PSFDataSet {
     int get_sweep_npoints() const;
     PSFVector *get_sweep_values() const;
 
-    PropertyMap get_signal_properties(std::string name) const;
+    const PropertyMap &get_signal_properties(std::string name) const;
     PSFBase *get_signal(std::string name) const;
     PSFVector *get_signal_vector(std::string name) const;
     const PSFScalar& get_signal_scalar(std::string name) const;

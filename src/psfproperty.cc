@@ -3,16 +3,16 @@
 #include "psfinternal.h"
 
 Property::~Property() {
-    if(value) 
-	delete(value);
+  if(m_value) 
+    delete(m_value);
 }
 
 Property::Property(Property const &x) {
-    if(x.value) {
-	name = x.name;
-	value = x.value->clone();
-    } else
-	value = NULL;
+  if(x.m_value) {
+    m_name  = x.m_name;
+    m_value = x.m_value->clone();
+  } else
+    m_value = NULL;
 }
 
 int Property::deserialize(const char *buf) {
@@ -24,20 +24,20 @@ int Property::deserialize(const char *buf) {
     if(!ischunk(m_chunktype))
 	throw IncorrectChunk(m_chunktype);
 
-    buf += name.deserialize(buf);
+    buf += m_name.deserialize(buf);
 
     switch(m_chunktype) {
     case 33:
-	value = new PSFStringScalar;
-	buf += value->deserialize(buf);
+	m_value = new PSFStringScalar;
+	buf += m_value->deserialize(buf);
 	break;
     case 34:
-	value = new PSFInt32Scalar();
-	buf += value->deserialize(buf);
+	m_value = new PSFInt32Scalar();
+	buf += m_value->deserialize(buf);
 	break;
     case 35:
-	value = new PSFDoubleScalar();
-	buf += value->deserialize(buf);
+	m_value = new PSFDoubleScalar();
+	buf += m_value->deserialize(buf);
 	break;
     }
     return buf - startbuf;

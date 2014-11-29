@@ -159,8 +159,9 @@ PSFVector* PSFFile::get_values(std::string name) const {
 	return NULL;
 }	
 
-PropertyMap PSFFile::get_value_properties(std::string name) const {
-    return m_nonsweepvalues->get_value_properties(name);
+const PropertyBlock &PSFFile::get_value_properties(std::string name) const {
+  //FIXME, check for NULL m_nonsweepvalues
+  return m_nonsweepvalues->get_value_properties(name);
 }
 
 const PSFScalar& PSFFile::get_value(std::string name) const {
