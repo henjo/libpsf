@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4
+
 if ENABLE_TESTS
   MAYBE_TEST = test
 endif
