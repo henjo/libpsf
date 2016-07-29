@@ -20,6 +20,9 @@
 using namespace boost::python;
 namespace py = boost::python;
 
+
+#define NUMPY_IMPORT_ARRAY_RETVAL
+
 template<class T>
 struct VecToList
 {
@@ -42,9 +45,9 @@ PyObject *psfscalar_to_python(const PSFScalar *scalar) {
   if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar))
     result = PyFloat_FromDouble(p->value);
   else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar))
-    result = PyInt_FromLong((int)*p);
+    result = PyLong_FromLong((int)*p);
   else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar))
-    result = PyString_FromString(p->tostring().c_str());
+    result = PyBytes_FromString(p->tostring().c_str());
   else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar))
     result = Struct_to_python::convert(p->value);
   else
@@ -66,7 +69,7 @@ struct PropertyMap_to_python {
     PyObject *dict = PyDict_New();
 
     for(PropertyMap::const_iterator i = propmap.begin(); i != propmap.end(); i++)
-      PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+      PyDict_SetItem(dict, PyBytes_FromString(i->first.c_str()), 
 		     psfscalar_to_python(i->second));	
     return dict;
   }
@@ -76,7 +79,7 @@ PyObject *Struct_to_python::convert(const Struct& s) {
   PyObject *dict = PyDict_New();
     
   for(Struct::const_iterator i = s.begin(); i != s.end(); i++) {
-    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+    PyDict_SetItem(dict, PyBytes_FromString(i->first.c_str()), 
 		   psfscalar_to_python(i->second));
   }	
     
@@ -131,7 +134,7 @@ PyObject *vectorstruct_to_python(VectorStruct *vs) {
   PyObject *dict = PyDict_New();
 		
   for(VectorStruct::const_iterator i = vs->begin(); i != vs->end(); i++)
-    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+    PyDict_SetItem(dict, PyBytes_FromString(i->first.c_str()), 
 		   psfvector_to_numpyarray(i->second, true));	
   return dict;
 }
