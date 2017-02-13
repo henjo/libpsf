@@ -8,7 +8,6 @@ Chunk * TraceSection::child_factory(int chunktype) const {
     else if(GroupDef::ischunk(chunktype))
 	return new GroupDef(psf);
     else {
-	std::cerr << "Unexpected chunktype: " << chunktype << std::endl;
 	throw IncorrectChunk(chunktype);
     }
 }
