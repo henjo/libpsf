@@ -123,7 +123,6 @@ bool PSFDataSet::get_invertstruct() const {
 
 inline void PSFDataSet::verify_open() const {
     if (!m_is_open) {
-	std::cerr << "Data set is not open" << std::endl;
 	throw DataSetNotOpen();
     }
 }

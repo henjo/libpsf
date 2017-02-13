@@ -9,7 +9,6 @@ Chunk * ValueSectionNonSweep::child_factory(int chunktype) {
     if(NonSweepValue::ischunk(chunktype))
 	return new NonSweepValue(psf);
     else {
-	std::cerr << "Unexpected chunktype: " << chunktype << std::endl;
 	throw IncorrectChunk(chunktype);
     }
 }

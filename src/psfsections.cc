@@ -8,7 +8,6 @@ Chunk *HeaderSection::child_factory(int chunktype) const {
     else if(chunktype == 1)
 	return NULL;
     else {
-	std::cerr << "Unexpected chunktype: " << chunktype << std::endl;
 	throw IncorrectChunk(chunktype);
     }
 }
@@ -28,7 +27,6 @@ Chunk *TypeSection::child_factory(int chunktype) const {
     if(DataTypeDef::ischunk(chunktype))
 	return new DataTypeDef();
     else {
-	std::cerr << "Unexpected chunktype: " << chunktype << std::endl;
 	throw IncorrectChunk(chunktype);
     }
 }
@@ -39,7 +37,6 @@ Chunk * SweepSection::child_factory(int chunktype) const {
     else if(chunktype == 3)
 	return NULL;
     else {
-	std::cerr << "Unexpected chunktype: " << chunktype << std::endl;
 	throw IncorrectChunk(chunktype);
     }
 }
