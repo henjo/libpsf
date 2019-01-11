@@ -19,11 +19,29 @@ To build and install the library::
    make
    sudo make install
 
-To build the python extension::
+To build the python extension with conda::
+    
+    conda install numpy boost
 
-   ./autogen.sh --with-python
-   make
-   sudo make install
+    link python3.7 to python3.7m
+    ln -s $CONDA_PREFIX/lib/libpython3.7m.so $CONDA_PREFIX/lib/libpython3.7.so
+    
+     
+    brew install automake autoconf libtool 
+    # perl requires Thread::Queue
+    brew install cpanm
+    cpanm Thread::Queue
+    PERLLIB=/path/to/.linuxbrew/Cellar/perl/5.28.1/lib/perl5/5.28.1 ./autogen.sh 
+    ./configure --prefix=$CONDA_PREFIX --with-python
+    make
+    # make errors out with "cannot find the library 'libpsf.la'" so build
+    libpsf.la first
+    cd src
+    make libpsf.la
+    cd ..
+    make install
+    cd bindings/python
+    python setup.py install
 
 
 Running the tests

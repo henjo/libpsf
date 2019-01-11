@@ -20,6 +20,23 @@
 using namespace boost::python;
 namespace py = boost::python;
 
+
+#ifndef PY_MAJOR_VERSION
+    #error could not find python version from python headers
+#else
+    #if PY_MAJOR_VERSION >= 3
+        #warning "detected python 3.x";
+	#define STRING_INPUT_FN PyBytes_FromString
+	#define LONG_INPUT_FN PyLong_FromLong
+	#define NPINIT() import_array1()
+    #else
+        #warning "detected python 2.x";
+	#define STRING_INPUT_FN PyString_FromString
+	#define LONG_INPUT_FN PyInt_FromLong
+	#define NPINIT() import_array()
+    #endif
+#endif
+
 template<class T>
 struct VecToList
 {
@@ -42,9 +59,9 @@ PyObject *psfscalar_to_python(const PSFScalar *scalar) {
   if (const PSFDoubleScalar *p = dynamic_cast<const PSFDoubleScalar *>(scalar))
     result = PyFloat_FromDouble(p->value);
   else if (const PSFInt32Scalar *p = dynamic_cast<const PSFInt32Scalar *>(scalar))
-    result = PyInt_FromLong((int)*p);
+    result = LONG_INPUT_FN((int)*p);
   else if (const PSFStringScalar *p = dynamic_cast<const PSFStringScalar *>(scalar))
-    result = PyString_FromString(p->tostring().c_str());
+    result = STRING_INPUT_FN(p->tostring().c_str());
   else if(const StructScalar *p = dynamic_cast<const StructScalar *>(scalar))
     result = Struct_to_python::convert(p->value);
   else
@@ -66,7 +83,7 @@ struct PropertyMap_to_python {
     PyObject *dict = PyDict_New();
 
     for(PropertyMap::const_iterator i = propmap.begin(); i != propmap.end(); i++)
-      PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+      PyDict_SetItem(dict, STRING_INPUT_FN(i->first.c_str()), 
 		     psfscalar_to_python(i->second));	
     return dict;
   }
@@ -76,7 +93,7 @@ PyObject *Struct_to_python::convert(const Struct& s) {
   PyObject *dict = PyDict_New();
     
   for(Struct::const_iterator i = s.begin(); i != s.end(); i++) {
-    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+    PyDict_SetItem(dict, STRING_INPUT_FN(i->first.c_str()), 
 		   psfscalar_to_python(i->second));
   }	
     
@@ -131,7 +148,7 @@ PyObject *vectorstruct_to_python(VectorStruct *vs) {
   PyObject *dict = PyDict_New();
 		
   for(VectorStruct::const_iterator i = vs->begin(); i != vs->end(); i++)
-    PyDict_SetItem(dict, PyString_FromString(i->first.c_str()), 
+    PyDict_SetItem(dict, STRING_INPUT_FN(i->first.c_str()), 
 		   psfvector_to_numpyarray(i->second, true));	
   return dict;
 }
@@ -187,7 +204,7 @@ void translate_exception_fileopenerror(FileOpenError const& e) {
 
 BOOST_PYTHON_MODULE(libpsf)
 { 
-  import_array();
+  NPINIT();
   to_python_converter<PropertyMap, PropertyMap_to_python>();
   to_python_converter<PSFBase *, PSFBase_to_numpyarray>();
   to_python_converter<PSFVector *, PSFVector_to_numpyarray>();
