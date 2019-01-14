@@ -26,7 +26,11 @@
 
 // init_numpy hack https://stackoverflow.com/questions/47026900/pyarray-check-gives-segmentation-fault-with-cython-c
 int init_numpy(){
-    import_array();
+    if(_import_array() < 0){
+        PyErr_Print();
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return false;
+    }
     return true;
 }
 

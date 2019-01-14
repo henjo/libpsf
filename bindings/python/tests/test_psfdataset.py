@@ -6,7 +6,8 @@ import libpsf
 class test_tran(unittest.TestCase):
 
     def setUp(self):
-        self.psf = libpsf.PSFDataSet(os.path.dirname(__file__) + "/data/timeSweep")
+        dataset_file =os.path.join(os.path.dirname(__file__), "data/timeSweep")
+        self.psf = libpsf.PSFDataSet(dataset_file)
 
 
     def test_get_header_properties(self):
