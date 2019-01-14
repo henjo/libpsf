@@ -94,6 +94,10 @@ const PSFScalar& PSFDataSet::get_signal_scalar(std::string name) const {
 const PropertyMap & PSFDataSet::get_signal_properties(std::string name) const {
     verify_open();
 
+    if (is_swept()){
+        throw NotFound();
+    }
+
     return m_psf->get_value_properties(name).get_propmap();
 }
 

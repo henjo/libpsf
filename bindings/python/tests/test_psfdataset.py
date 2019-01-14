@@ -11,7 +11,7 @@ class test_tran(unittest.TestCase):
 
     def test_get_header_properties(self):
         props = self.psf.get_header_properties()
-        self.assertEquals(props, {'PSF style': 7, 
+        self.assertEqual(props, {'PSF style': 7, 
                                   'PsfTrailerStart': 0, 
                                   'date': ' 5-Sep-2007 14:24:31', 
                                   'PSF buffer size': 593920, 
@@ -54,6 +54,6 @@ class test_tran(unittest.TestCase):
 
 
     def test_get_signal_properties(self):
-        if not self.psf.is_swept():
+        with self.assertRaises(libpsf.NotFound) as context:
             self.psf.get_signal_properties("PSUP")
 

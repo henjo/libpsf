@@ -79,7 +79,8 @@ cdef class PSFDataSet:
 
     def get_signal_properties(self, signal):
         """Properties of a non swept signal
-        Note: Segfaults for non-sweeps, check self.is_swept() first
+        Throws NotFound exception for non_swept datasets so check self.is_swept
+        first
         """
         return propertymap_to_python(self.obj.get_signal_properties(to_unicode(signal)))
 
