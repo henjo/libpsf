@@ -34,8 +34,7 @@ To build the python extension with conda::
     PERLLIB=/path/to/.linuxbrew/Cellar/perl/5.28.1/lib/perl5/5.28.1 ./autogen.sh 
     ./configure --prefix=$CONDA_PREFIX --with-python
     make
-    # make errors out with "cannot find the library 'libpsf.la'" so build
-    libpsf.la first
+    # make errors out with "cannot find the library 'libpsf.la'" so build libpsf.la first
     cd src
     make libpsf.la
     cd ..
