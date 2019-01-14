@@ -53,7 +53,7 @@ class test_tran(unittest.TestCase):
         self.assertTrue(self.psf.is_swept())
 
 
-    # FIXME This test segfaults
-    # def test_get_signal_properties(self):
-    #     self.psf.get_signal_properties("PSUP")
+    def test_get_signal_properties(self):
+        if not self.psf.is_swept():
+            self.psf.get_signal_properties("PSUP")
 
