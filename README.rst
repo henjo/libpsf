@@ -21,15 +21,14 @@ To build and install the library::
 
 To build the python extension with conda::
     
-    conda install numpy automake libtool 
+    conda install python=3.7 numpy automake libtool cython 
 
-    link python3.7 to python3.7m
+    # link python3.7 to python3.7m
     ln -s $CONDA_PREFIX/lib/libpython3.7m.so $CONDA_PREFIX/lib/libpython3.7.so
     
      
     ./autogen.sh 
     ./configure --prefix=$CONDA_PREFIX --with-python
-    make
     # make errors out with "cannot find the library 'libpsf.la'" so build libpsf.la first
     cd src
     make libpsf.la
