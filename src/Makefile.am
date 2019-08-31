@@ -11,6 +11,6 @@ libpsf_la_SOURCES = psf.cc psfdata.cc psfproperty.cc psfchunk.cc \
 	psfnonsweepvalue.cc psfsweepvalue.cc psfpropertyblock.cc
 
 libpsf_la_CXXFLAGS = \
-	-I../include ${BOOST_CPPFLAGS}
+	-I../include -fPIC
 
 
