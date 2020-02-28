@@ -623,6 +623,7 @@ public:
     void close();
     
     bool validate() const;
+    bool is_done() const;
 
     std::string m_filename;
 

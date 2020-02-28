@@ -2,6 +2,8 @@
 #include "psfdata.h"
 #include "psfinternal.h"
 
+#include <algorithm>
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -42,24 +44,35 @@ void PSFFile::deserialize(const char *buf, int size) {
 
     std::map<int, Section> sections;
 
-    int nsections = (size - datasize - 12) / 8;
-    int lastoffset = 0, lastsectionnum = -1;
-
-    const char *toc = buf + size - 12 - nsections*8;
+    int section_num = 0;
+    uint32_t section_offset = 4;
     Section section;
-    for(int i=0; i < nsections; i++) {
-	section.n = GET_INT32(toc + 8*i);
-	section.offset = GET_INT32(toc + 8*i + 4);
 
-	if (i>0)
-	    sections[lastsectionnum].size = section.offset - lastoffset;
+    std::vector<int> all_sections = {
+        HeaderSection::type, 
+        TypeSection::type,
+        SweepSection::type,
+        TraceSection::type, 
+        ValueSectionSweep::type, 
+        ValueSectionNonSweep::type
+    };
 
-	sections[section.n] = section;
+    while ( section_offset < size ){
+        uint32_t section_type = GET_INT32(buf + section_offset);
+        if ( !(std::find(all_sections.begin(), all_sections.end(), section_type) != 
+                all_sections.end()) )
+            break;
+        section.n = section_num; 
+        section.offset = section_offset;
 
-	lastoffset = section.offset;
-	lastsectionnum = section.n;
+        uint32_t section_end = GET_INT32(buf + section_offset + 4);
+        section.size = section_end - section_offset;
+
+        sections[section_num] = section;
+
+        section_num++;    
+        section_offset = section_end;
     }
-    sections[section.n].size = size - section.offset;
 
     m_header = new HeaderSection();
     m_header->deserialize(buf + sections[SECTION_HEADER].offset, sections[SECTION_HEADER].offset);
@@ -104,7 +117,8 @@ void PSFFile::open() {
     m_size = lseek(m_fd, 0, SEEK_END);
   
     m_buffer = (char *)mmap(0, m_size, PROT_READ, MAP_SHARED, m_fd, 0);
-  
+    
+    bool valid = validate();
     if(validate())
 	deserialize((const char *)m_buffer, m_size);
     else
@@ -124,7 +138,7 @@ void PSFFile::close() {
     }
 }
 
-bool PSFFile::validate() const {
+bool PSFFile::is_done() const {
     std::ifstream fstr(m_filename.c_str());
 	
     fstr.seekg(-12, std::ios::end);
@@ -136,6 +150,10 @@ bool PSFFile::validate() const {
 	
     return !strcmp(clarissa, "Clarissa");
 }	
+
+bool PSFFile::validate () const {
+    return true;
+}
 
 
 NameList PSFFile::get_param_names() const {

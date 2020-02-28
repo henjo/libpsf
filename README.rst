@@ -19,11 +19,23 @@ To build and install the library::
    make
    sudo make install
 
-To build the python extension::
+To build the python extension with conda::
+    
+    conda install python=3.7 numpy automake libtool cython 
 
-   ./autogen.sh --with-python
-   make
-   sudo make install
+    # link python3.7 to python3.7m
+    ln -s $CONDA_PREFIX/lib/libpython3.7m.so $CONDA_PREFIX/lib/libpython3.7.so
+    
+     
+    ./autogen.sh 
+    ./configure --prefix=$CONDA_PREFIX --with-python
+    # make errors out with "cannot find the library 'libpsf.la'" so build libpsf.la first
+    cd src
+    make libpsf.la
+    cd ..
+    make install
+    cd bindings/python
+    python setup.py install
 
 
 Running the tests

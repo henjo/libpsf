@@ -186,7 +186,15 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
     }
 
     for(int i=0; i < *totaln; ) {
-	buf += Chunk::deserialize(buf);
+
+    int testtype = GET_INT32(buf);
+    if (testtype == SweepValue::type){
+        buf += 4;
+    }else if (testtype == ZeroPad::type){
+        ZeroPad pad;
+        buf += pad.deserialize(buf);
+        buf += 4;
+    }
     
 	int tmp = GET_INT32(buf);
 	int windowleft = tmp >> 16; 

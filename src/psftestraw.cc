@@ -2,28 +2,21 @@
 
 #include <string>
 
-int main() {
-    PSFFile psf("/nfs/home/henrik/spectre/1/pnoise.raw/pnoise_pout3g.pnoise");
-    psf.open();
+int main(int argc, char *argv[]) {
+    char * filename = argv[1];
 
-    // NameList names = psf.traces->get_names();
-    // BOOST_FOREACH(std::string name, names) { 
-    // 	std::cout << name << " "; 
-    // }
+    PSFDataSet data(filename);
+    data.open();
 
-    ChildList filter;
-    filter.push_back(psf.traces->get_child(96226));
+    PSFDoubleVector* vout = (PSFDoubleVector *) data.get_signal_vector("vout");
+
+    for (auto prop: data.get_header_properties()){
+        std::cout << prop.first << ": \t" << *prop.second << std::endl;
+    }
     
-    SweepValueList result;
+    for (auto i = vout->begin(); i != vout->end(); ++i)
+        std::cout << *i << ' ';
     
-        result = ((ValueSectionSweep *)psf.values)->get_values(*psf.traces);    
-    //result = ((ValueSectionSweep *)psf.values)->get_values(filter);    
-
-    std::cout << result.size() << std::endl;
-
-    Chunk *trace = psf.traces->get_child("tx_iqfilter_stop_0.tx_iqfilter_top_0.tx_iqfilter_bias_0.iprobe_gnd");
-
-    std::cout << trace->get_name() << std::endl;
-
-    psf.close();
+    std::cout << "\nNumber of time points = " << vout->size() << std::endl;
+    data.close();
 }
