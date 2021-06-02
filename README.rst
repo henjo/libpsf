@@ -3,46 +3,44 @@ libpsf is a c++ library that reads Cadence PSF waveform files
 Install
 =======
 
-Install prerequisits
+Install prerequisites
 --------------------
+If building without python binding, only cmake and boost are required
 
-On a debian based system you can run the following to install the 
+- On a debian based system you can run the following to install the 
 packages needed to build libpsf:
 
-sudo apt-get install autoconf automake libtool libboost-all-dev python-numpy-dev 
+    $ sudo apt-get install cmake libboost-all-dev python-numpy-dev cython cppunit
+
+- Otherwise conda can be used to install the following packages:
+
+    $ conda install python numpy cython cmake
+    
+    Then install boost libraries and set
+    
+    $ export BOOST_LOC=<BOOST_LOCATION>
 
 Build and install
 -----------------
-To build and install the library::
+- From root directory, create build directory
 
-   ./autogen.sh
-   make
-   sudo make install
+    $ mkdir build && cd build
+- Run cmake configuration
 
-To build the python extension with conda::
+    $ cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DCMAKE_BUILD_TYPE=RELEASE -DWITH_PYTHON=ON
+
+    `CONDA_PREFIX` is the destination where you want libpsf to be installed
+    To build without the python binding, just set `-DWITH_PYTHON=OFF`
+- Build
+
+    $ make
+- To run tests, [cppunit](https://www.freedesktop.org/wiki/Software/cppunit) is required.
     
-    conda install python=3.7 numpy automake libtool cython 
+    $ ctest
 
-    # link python3.7 to python3.7m
-    ln -s $CONDA_PREFIX/lib/libpython3.7m.so $CONDA_PREFIX/lib/libpython3.7.so
-    
-     
-    ./autogen.sh 
-    ./configure --prefix=$CONDA_PREFIX --with-python
-    # make errors out with "cannot find the library 'libpsf.la'" so build libpsf.la first
-    cd src
-    make libpsf.la
-    cd ..
-    make install
-    cd bindings/python
-    python setup.py install
+    `ctest --verbose` to see individual test result outputs
 
+- Install
 
-Running the tests
------------------
-Install cppunit, then compile and run the tests in the test dir::
-
-    sudo apt-get install libcppunit-dev
-    cd test
-    make
-    ./test_psfdataset
+    $ make install
+ 

@@ -1,0 +1,15 @@
+PSF
+
+Size: Last four bytes (Big-endian)
+
+nsections = (size - datasize - 12) / 8
+
+const char *toc = buf + size - 12 - nsections*8;
+
+#define SECTION_HEADER 0
+#define SECTION_TYPE 1
+#define SECTION_SWEEP 2
+#define SECTION_TRACE 3
+#define SECTION_VALUE 4
+
+

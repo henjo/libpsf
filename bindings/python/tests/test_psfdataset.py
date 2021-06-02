@@ -55,6 +55,6 @@ class test_tran(unittest.TestCase):
 
 
     def test_get_signal_properties(self):
-        with self.assertRaises(libpsf.NotFound) as context:
+        with self.assertRaises(libpsf.NotFound):
             self.psf.get_signal_properties("PSUP")
 

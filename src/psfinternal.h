@@ -64,6 +64,7 @@ typedef std::vector<const Chunk *> Filter;
 typedef std::vector<std::string> NameList;
 typedef std::vector<SweepValue> SweepValueList;
 typedef std::map<std::string, const PSFScalar *> PropertyMap;
+typedef std::map<int, Section> SectionMap;
 #ifdef HAVE_TR1_UNORDERED_MAP
 typedef std::tr1::unordered_map<int,int> TraceIDOffsetMap;
 typedef std::tr1::unordered_map<std::string, int> NameIndexMap;
@@ -628,6 +629,8 @@ public:
     std::string m_filename;
 
 private:
+    SectionMap load_sections(const char *buf, int size);
+    SectionMap load_table_of_contents(const char *buf, int size);
     void deserialize(const char *buf, int size);
 
     int m_fd;
