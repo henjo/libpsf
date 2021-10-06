@@ -3,34 +3,44 @@ libpsf is a c++ library that reads Cadence PSF waveform files
 Install
 =======
 
-Install prerequisits
+Install prerequisites
 --------------------
+If building without python binding, only cmake and boost are required
 
-On a debian based system you can run the following to install the 
+- On a debian based system you can run the following to install the 
 packages needed to build libpsf:
 
-sudo apt-get install autoconf automake libtool libboost-all-dev python-numpy-dev 
+    $ sudo apt-get install cmake libboost-all-dev python-numpy-dev cython cppunit
+
+- Otherwise conda can be used to install the following packages:
+
+    $ conda install python numpy cython cmake
+    
+    Then install boost libraries and set
+    
+    $ export BOOST_LOC=<BOOST_LOCATION>
 
 Build and install
 -----------------
-To build and install the library::
+- From root directory, create build directory
 
-   ./autogen.sh
-   make
-   sudo make install
+    $ mkdir build && cd build
+- Run cmake configuration
 
-To build the python extension::
+    $ cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DCMAKE_BUILD_TYPE=RELEASE -DWITH_PYTHON=ON
 
-   ./autogen.sh --with-python
-   make
-   sudo make install
+    `CONDA_PREFIX` is the destination where you want libpsf to be installed
+    To build without the python binding, just set `-DWITH_PYTHON=OFF`
+- Build
 
+    $ make
+- To run tests, [cppunit](https://www.freedesktop.org/wiki/Software/cppunit) is required.
+    
+    $ ctest
 
-Running the tests
------------------
-Install cppunit, then compile and run the tests in the test dir::
+    `ctest --verbose` to see individual test result outputs
 
-    sudo apt-get install libcppunit-dev
-    cd test
-    make
-    ./test_psfdataset
+- Install
+
+    $ make install
+ 

@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import os
+import numpy
+
+# BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
+# properly updated when the contents of directories change (true for distutils,
+# not sure about setuptools).
+if os.path.exists('MANIFEST'):
+    os.remove('MANIFEST')
+
+from setuptools import setup, Extension
+from Cython.Build import cythonize
+
+try:
+    with open('README.md', "r") as fh:
+        long_description = fh.read()
+except:
+    long_description = ''
+
+numpy_includes = [numpy.get_include()]
+python_includes = "${Python_INCLUDE_DIRS}".split(":")
+psf_includes = "${LIBPSF_INCLUDE}".split()
+psf_lib_dir = "${LIBPSF_BUILD_DIR}"
+
+# https://stackoverflow.com/questions/4597228/how-to-statically-link-a-library-when-compiling-a-python-module-extension
+static_libraries = ['psf']
+extra_objects = [
+    '{}/lib{}_static.a'.format(psf_lib_dir, l) for l in static_libraries]
+libraries = []
+extra_link_args=[]
+
+
+libpsf_ext = Extension(
+    name="libpsf",
+    sources=["${CMAKE_CURRENT_SOURCE_DIR}/libpsf.pyx",
+             "${CMAKE_CURRENT_SOURCE_DIR}/psfpython.cc"],
+    extra_objects=extra_objects,
+    libraries=libraries,
+    include_dirs=psf_includes + numpy_includes + python_includes,
+    extra_link_args=extra_link_args,
+)
+
+setup(
+    name="libpsf",
+    ext_modules=cythonize([libpsf_ext]),
+    version="${CMAKE_PROJECT_VERSION}",
+    description="library to read Cadence PSF output",
+    install_requires=['numpy>=1.10.0'],
+    test_suite="tests",
+    # metadata to display on PyPI
+    author="@lekez2005 originally Henrik Johansen",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    license="GNU Lesser General Public License v3.0",
+    keywords=["cadence", "spectre", "virtuoso", "circtuit", "simulation",
+              "waveform", "circuit simulation"],
+    zip_safe=False
+)

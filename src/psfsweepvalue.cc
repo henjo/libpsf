@@ -186,37 +186,54 @@ int SweepValueWindowed::deserialize(const char *buf, int *totaln, int windowoffs
     }
 
     for(int i=0; i < *totaln; ) {
-	buf += Chunk::deserialize(buf);
-    
-	int tmp = GET_INT32(buf);
-	int windowleft = tmp >> 16; 
-	int n = tmp & 0xffff;       // Number of data points in window
+        int testtype;
+        // some files have extra 31's between windows so discard them,
+        // TODO look into 31 padding
+        while (true) {
+            testtype = GET_INT32(buf);
+            if (testtype == 31) {
+                buf += 4;
+            } else {
+                break;
+            }
+        }
+        if (testtype == SweepValue::type) {
+            buf += 4;
+        } else if (testtype == ZeroPad::type) {
+            ZeroPad pad;
+            buf += pad.deserialize(buf);
+            buf += 4;
+        }
 
-	buf += 4;
-	windowoffset += 4;
-    
-	// Deserialize parameter values from file to parameter vector (m_paramvalues)
-	int pwinstart = m_paramvalues->size();
-	m_paramvalues->resize(m_paramvalues->size() + n);
-	for(int j=0; j < n; j++)
-	    buf += paramtype.deserialize_data(m_paramvalues->ptr_at(pwinstart + j), buf);
+        int tmp = GET_INT32(buf);
+        int windowleft = tmp >> 16;
+        int n = tmp & 0xffff;  // Number of data points in window
 
-	const char *valuebuf = buf;        // Save start of trace values pointer in buffer
-	const_iterator idatavec = begin(); // Init iterator of destination trace vectors
-	for(Filter::const_iterator j=filter.begin(); j != filter.end(); j++, idatavec++) {
-	    const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**j);
+        buf += 4;
+        windowoffset += 4;
 
-	    // calculate buffer pointer
-	    buf = valuebuf +  psf->get_value_section_sweep().get_valueoffset((*j)->get_id()) +
-		(windowsize - n * typeref.datasize());
-	    
-	    for(int k=0; k < n; k++)
-		buf += typeref.deserialize_data((*idatavec)->ptr_at(i+k), buf);
-	}
+        // Deserialize parameter values from file to parameter vector (m_paramvalues)
+        int pwinstart = m_paramvalues->size();
+        m_paramvalues->resize(m_paramvalues->size() + n);
+        for (int j = 0; j < n; j++)
+            buf += paramtype.deserialize_data(m_paramvalues->ptr_at(pwinstart + j), buf);
 
-	// Advance buffer pointer to end of trace values
-	buf = valuebuf + ntraces * windowsize;
-	i += n;
+        const char *valuebuf = buf;         // Save start of trace values pointer in buffer
+        const_iterator idatavec = begin();  // Init iterator of destination trace vectors
+        for (Filter::const_iterator j = filter.begin(); j != filter.end(); j++, idatavec++) {
+            const DataTypeRef &typeref = dynamic_cast<const DataTypeRef &>(**j);
+
+            // calculate buffer pointer
+            buf = valuebuf + psf->get_value_section_sweep().get_valueoffset((*j)->get_id()) +
+                  (windowsize - n * typeref.datasize());
+
+            for (int k = 0; k < n; k++)
+                buf += typeref.deserialize_data((*idatavec)->ptr_at(i + k), buf);
+        }
+
+        // Advance buffer pointer to end of trace values
+        buf = valuebuf + ntraces * windowsize;
+        i += n;
     }
     return buf - startbuf;
 }

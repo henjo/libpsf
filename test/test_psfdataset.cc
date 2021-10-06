@@ -71,12 +71,12 @@ protected:
   
   void test_open_psfascii();
 private:	
-  std::auto_ptr<PSFDataSet> m_dcop_ds, m_tran_ds;
+  std::unique_ptr<PSFDataSet> m_dcop_ds, m_tran_ds;
 };
 
 void TestPSFDataSet::setUp() {
-    m_dcop_ds = std::auto_ptr<PSFDataSet>(new PSFDataSet("data/dcOp.dc"));
-    m_tran_ds = std::auto_ptr<PSFDataSet>(new PSFDataSet("data/tran.tran"));
+    m_dcop_ds = std::unique_ptr<PSFDataSet>(new PSFDataSet("data/dcOp.dc"));
+    m_tran_ds = std::unique_ptr<PSFDataSet>(new PSFDataSet("data/tran.tran"));
 }
 
 // DCOP data set tests
@@ -123,7 +123,7 @@ void TestPSFDataSet::test_tran_get_nsweeps() {
 
 void TestPSFDataSet::test_tran_get_sweep_npoints() {
   // test tran
-  CPPUNIT_ASSERT_EQUAL(m_tran_ds->get_sweep_npoints(), 24942);
+  CPPUNIT_ASSERT_EQUAL(m_tran_ds->get_sweep_npoints(), 76);
 }
 
 void TestPSFDataSet::test_tran_get_sweep_values() {
@@ -131,8 +131,8 @@ void TestPSFDataSet::test_tran_get_sweep_values() {
   stringvector_t names = m_tran_ds->get_signal_names();
   
   // Get signal vectors
-  for(stringvector_iter_t name_iter = names.begin(); name_iter != names.end(); name_iter++) {
-    const PSFVector* datavector = m_tran_ds->get_signal_vector("in");
+  for(auto name: names) {
+    const PSFVector* datavector = m_tran_ds->get_signal_vector(name);
     delete(datavector);
   }
 }

@@ -6,12 +6,13 @@ import libpsf
 class test_tran(unittest.TestCase):
 
     def setUp(self):
-        self.psf = libpsf.PSFDataSet(os.path.dirname(__file__) + "/data/timeSweep")
+        dataset_file =os.path.join(os.path.dirname(__file__), "data/timeSweep")
+        self.psf = libpsf.PSFDataSet(dataset_file)
 
 
     def test_get_header_properties(self):
         props = self.psf.get_header_properties()
-        self.assertEquals(props, {'PSF style': 7, 
+        self.assertEqual(props, {'PSF style': 7, 
                                   'PsfTrailerStart': 0, 
                                   'date': ' 5-Sep-2007 14:24:31', 
                                   'PSF buffer size': 593920, 
@@ -53,7 +54,7 @@ class test_tran(unittest.TestCase):
         self.assertTrue(self.psf.is_swept())
 
 
-    # FIXME This test segfaults
-    # def test_get_signal_properties(self):
-    #     self.psf.get_signal_properties("PSUP")
+    def test_get_signal_properties(self):
+        with self.assertRaises(libpsf.NotFound):
+            self.psf.get_signal_properties("PSUP")
 
