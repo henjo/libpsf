@@ -4,6 +4,12 @@
 #include "psfdata.h"
 #include "psfinternal.h"
 
+PropertyBlock::~PropertyBlock() {
+    for(auto&[k,v] : m_propmap){
+        delete v;
+    }
+}
+
 const PSFScalar &PropertyBlock::find(const std::string name) const
 {
   PropertyMap::const_iterator found_prop_iter;

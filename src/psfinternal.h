@@ -144,6 +144,7 @@ private:
 class PropertyBlock {
  public:
   PropertyBlock() {};
+  ~PropertyBlock();
 
   const PSFScalar &find(const std::string key) const;
   bool hasprop(const std::string key) const;
@@ -622,7 +623,8 @@ public:
     void open();
     void close();
     
-    bool validate() const;
+    //bool validate() const;
+    bool validate(const char* ptr_map, size_t size) const;
 
     std::string m_filename;
 
@@ -631,7 +633,7 @@ private:
 
     int m_fd;
     const char *m_buffer;
-    int m_size;
+    ssize_t m_size;
 
     HeaderSection *m_header;
     TypeSection *m_types;

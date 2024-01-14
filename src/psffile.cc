@@ -100,19 +100,22 @@ void PSFFile::open() {
   
     if (m_fd == -1)
 	throw FileOpenError();
-  
+
     m_size = lseek(m_fd, 0, SEEK_END);
   
     m_buffer = (char *)mmap(0, m_size, PROT_READ, MAP_SHARED, m_fd, 0);
   
-    if(validate())
+    if(validate(m_buffer, m_size))
 	deserialize((const char *)m_buffer, m_size);
     else
 	throw InvalidFileError();
 }
 
 void PSFFile::close() {
-    munmap((void*) m_buffer, m_size);
+    if(m_buffer!=NULL){
+        munmap((void*) m_buffer, m_size);
+        m_buffer = NULL;
+    }
     
     if(m_fd != -1) {
 	int rval = ::close(m_fd);
@@ -124,7 +127,7 @@ void PSFFile::close() {
     }
 }
 
-bool PSFFile::validate() const {
+/*bool PSFFile::validate() const {
     std::ifstream fstr(m_filename.c_str());
 	
     fstr.seekg(-12, std::ios::end);
@@ -135,7 +138,14 @@ bool PSFFile::validate() const {
     clarissa[8]=0;
 	
     return !strcmp(clarissa, "Clarissa");
-}	
+}*/
+
+bool PSFFile::validate(const char* ptr_map, size_t size) const {
+    char clarissa[9];
+    memmove(clarissa, ptr_map+size-12, 8);
+    clarissa[8]=0;
+    return !strcmp(clarissa, "Clarissa");
+}
 
 
 NameList PSFFile::get_param_names() const {

@@ -3,7 +3,7 @@
 #include "psfinternal.h"
 
 Property::~Property() {
-  if(m_value) 
+  if(m_value)
     delete(m_value);
 }
 

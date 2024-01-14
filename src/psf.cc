@@ -10,7 +10,7 @@ PSFDataSet::PSFDataSet(std::string filename) : m_filename(filename), m_invertstr
 }
 
 PSFDataSet::~PSFDataSet() {
-    m_psf->close();
+    //m_psf->close();
     delete m_psf;
 }
 
